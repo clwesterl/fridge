@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sunshine Wine Club</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Wine Club">
+<meta name="theme-color" content="#FAF7F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161013" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=DM+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centered column (max 1100px). Masthead with a shelf of bottles, a sticky filter bar,
+   then each club pickup as a section (heading + card photo) over a 2-up grid of wine cards, 1-up on phones. */
+:root{
+  --bg:#FAF7F8;
+  --surface:#FFFFFF;
+  --sunk:#F3EDF0;
+  --ink:#2A1A21;
+  --muted:#76646C;
+  --line:#E8DDE2;
+  --accent:#7A1F3D;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#F4E3E9;
+  --star:#B07D1E;
+  --star-off:#DCCFD5;
+  --danger:#A3302B;
+  --w-red:#7B1E3A;
+  --w-white:#D6B33E;
+  --w-rose:#E58FA0;
+  --w-sparkling:#E3D597;
+  --w-orange:#D3863A;
+  --w-dessert:#A9661F;
+  --w-other:#9C8A92;
+  --shadow:0 1px 2px rgba(42,26,33,.05),0 8px 24px rgba(42,26,33,.05);
+  --scrim:rgba(20,10,14,.82);
+  --display:"Bodoni Moda","Bodoni 72",Didot,"Times New Roman",serif;
+  --body:"Work Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"DM Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#161013;--surface:#1F171B;--sunk:#291F24;--ink:#F2E8EC;--muted:#AE9BA4;--line:#3A2D33;
+    --accent:#E07C9B;--accent-ink:#1B0F14;--accent-soft:#3A2129;--star:#E5B65A;--star-off:#4A3B42;--danger:#F08A80;
+    --w-red:#B4365C;--w-white:#E2C564;--w-rose:#EE9FB0;--w-sparkling:#E9DDA5;--w-orange:#E19A55;--w-dessert:#C98436;--w-other:#8F7C85;
+    --shadow:0 1px 2px rgba(0,0,0,.35);--scrim:rgba(5,2,4,.86);
+    color-scheme:dark;
+  }
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--body);-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+[hidden]{display:none!important}
+img{max-width:100%}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Masthead */
+.topnav{display:flex;justify-content:flex-end;align-items:center;gap:6px;padding-top:14px;min-height:46px}
+.navlink{font-size:13.5px;font-weight:500;text-decoration:none;padding:6px 10px;border-radius:8px;margin-right:auto}
+.navlink:hover{background:var(--accent-soft)}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:9px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
+.iconbtn:hover{color:var(--ink);border-color:var(--muted)}
+.iconbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.iconbtn.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mast{padding-block:10px 8px}
+h1{margin:0;font:500 clamp(34px,6vw,56px)/1.05 var(--display);letter-spacing:-.01em;text-wrap:balance}
+h1 em{font-style:italic;color:var(--accent)}
+.summary{margin:12px 0 0;color:var(--muted);font-variant-numeric:tabular-nums}
+.summary b{color:var(--ink);font-weight:600}
+
+.shelf{margin-top:22px;border-bottom:2px solid var(--ink);padding-bottom:0;display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 10px;min-height:20px}
+.shelf:empty{display:none}
+.bottle{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px 2px;border-radius:6px;--sw:var(--w-other)}
+.bottle svg{width:20px;height:66px;display:block;overflow:visible}
+.bottle .glass{fill:var(--sw);stroke:var(--sw);stroke-width:1.2}
+.bottle .foil{fill:var(--ink);opacity:.82}
+.bottle .label{fill:var(--surface);opacity:.92}
+.bottle.is-open .glass{fill-opacity:.4}
+.bottle.is-done .glass{fill:transparent;stroke-dasharray:3 2}
+.bottle.is-done .label{opacity:0}
+.bottle .yr{font:500 10px/1 var(--mono);color:var(--muted);padding-bottom:4px}
+.bottle:hover .yr,.bottle:focus-visible .yr{color:var(--ink)}
+.bottle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.shelf-key{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 0;font-size:12px;color:var(--muted)}
+.shelf-key span{display:inline-flex;align-items:center;gap:6px}
+.k-full,.k-open,.k-done{display:inline-block;width:8px;height:14px;border-radius:2px 2px 3px 3px;border:1.2px solid var(--muted)}
+.k-full{background:var(--muted)}
+.k-open{background:color-mix(in srgb,var(--muted) 40%,transparent)}
+.k-done{border-style:dashed}
+
+/* Filter bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-top:18px}
+.bar-in{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding-block:12px}
+.search{flex:1 1 260px;min-width:0;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:40px}
+.search svg{flex:none;width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2}
+.search input{flex:1;min-width:0;border:0;background:transparent;outline:none;height:100%;font-size:16px}
+.search:focus-within{border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;line-height:1.2;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--sw)}
+.chip .n{font:500 11px/1 var(--mono);opacity:.7}
+.sort{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-left:auto}
+.sort select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink)}
+
+/* List */
+main{padding-block:8px 72px}
+.pickup{padding-top:28px}
+.pickup-head{display:flex;gap:20px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+.pickup-head > div{min-width:0}
+.eyebrow{margin:0 0 4px;font:500 11px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.pickup h2{margin:0;font:500 30px/1.1 var(--display);text-wrap:balance}
+.sel{margin:6px 0 0;color:var(--muted);font-size:14px}
+.cardthumb{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px}
+.cardthumb img{width:38px;height:54px;object-fit:cover;object-position:top;border-radius:4px;display:block;background:var(--sunk)}
+.cardthumb:hover{border-color:var(--muted)}
+.cardthumb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:20px;align-items:start}
+.flat{padding-top:28px}
+
+.wine{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px 22px 18px;display:flex;flex-direction:column;gap:14px;scroll-margin-top:96px;--sw:var(--w-other);position:relative}
+.wine.is-done{padding-top:46px}
+.done-tab{position:absolute;top:-1px;left:21px;display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:var(--bg);border-radius:0 0 7px 7px;padding:6px 11px 5px;font:500 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.done-tab svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.wine-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.type{display:inline-flex;align-items:center;gap:8px;font:500 12px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.swatch{width:14px;height:14px;border-radius:50%;background:var(--sw);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.vintage{font:500 14px/1 var(--mono);border:1px solid var(--ink);border-radius:4px;padding:5px 7px 4px;font-variant-numeric:tabular-nums}
+.name{margin:0;display:flex;flex-direction:column;gap:2px;text-wrap:balance}
+.producer{font:600 27px/1.1 var(--display);letter-spacing:-.005em}
+.cuvee{font:italic 400 20px/1.25 var(--display);color:var(--muted)}
+.place{margin:-6px 0 0;font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+.place .from{font:500 12px/1.6 var(--mono);color:var(--muted)}
+
+.profile{margin:0;display:grid;gap:10px}
+.profile > div{display:grid;grid-template-columns:76px 1fr;gap:10px;align-items:baseline}
+.profile dt{font:500 11px/1.9 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.profile dd{margin:0;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.tag{background:var(--sunk);border-radius:999px;padding:3px 10px;font-size:13px;line-height:1.5}
+.tag.pair{background:transparent;border:1px solid var(--line)}
+mark{background:transparent;color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:2px}
+
+.facts{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px;color:var(--muted)}
+.facts li{padding-left:14px;position:relative}
+.facts li::before{content:"";position:absolute;left:0;top:.7em;width:6px;height:1px;background:var(--muted)}
+
+.clubnotes summary{cursor:pointer;font-size:13.5px;font-weight:500;color:var(--accent);list-style:none;display:inline-flex;align-items:center;gap:6px}
+.clubnotes summary::-webkit-details-marker{display:none}
+.clubnotes summary::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.clubnotes[open] summary::after{transform:rotate(-135deg) translateY(-1px)}
+.clubnotes p{margin:10px 0 0;font-size:14px;line-height:1.65;max-width:65ch}
+
+.ours{border-top:1px dashed var(--line);padding-top:14px;display:grid;gap:12px;margin-top:auto}
+.ours-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--sunk)}
+.seg button{border:0;background:transparent;border-radius:7px;padding:5px 11px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.opened-on{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.opened-on input{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:4px 6px;font-size:13px;color:var(--ink)}
+.again{margin-left:auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px 5px 9px;font-size:13px;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.again svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8}
+.again[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
+.again[aria-pressed="true"] svg{fill:currentColor}
+.pill{font-size:13px;color:var(--muted);background:var(--sunk);border-radius:999px;padding:4px 10px}
+.pill.on{color:var(--accent)}
+
+.rate-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;font:500 11px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.avg{font:500 13px/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--ink)}
+.avg i{font-style:normal;color:var(--star)}
+.taste{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center}
+.who{display:flex;align-items:center;gap:8px;min-width:0;font-size:13.5px;font-weight:500}
+.av{width:22px;height:22px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font:600 11px/1 var(--body)}
+.stars{display:flex;gap:1px;justify-self:start}
+.star{border:0;background:transparent;padding:2px 3px;font-size:19px;line-height:1;color:var(--star-off)}
+.star.on{color:var(--star)}
+.star:hover{color:var(--star)}
+.stars.ro{font-size:16px;letter-spacing:1px;color:var(--star-off)}
+.stars.ro .on{color:var(--star)}
+.note-wrap{grid-column:1 / -1;display:flex;flex-direction:column;gap:6px}
+.note-wrap textarea{width:100%;min-height:44px;resize:vertical;border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:8px 10px;font-size:16px;line-height:1.5}
+.note-wrap textarea:focus{outline:none;border-color:var(--accent)}
+.note-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.save{border:0;background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:5px 12px;font-size:13px;font-weight:500}
+.their-note{grid-column:1 / -1;margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.when{font:400 11.5px/1 var(--mono);color:var(--muted)}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+
+.emptystate{padding:56px 0;max-width:50ch}
+.emptystate h2{font:500 26px/1.2 var(--display);margin:0 0 8px}
+.emptystate p{margin:0 0 10px;color:var(--muted)}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 13px;font-size:13.5px;font-weight:500;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:13px;z-index:20;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.toast.err{background:var(--danger);color:var(--surface)}
+
+.lightbox{position:fixed;inset:0;z-index:30;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+.lb-close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));border:0;background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:500}
+
+@media (max-width:560px){
+  .wine{padding:18px 16px 16px}
+  .wine.is-done{padding-top:44px}
+  .producer{font-size:24px}
+  .profile > div{grid-template-columns:1fr;gap:4px}
+  .sort{margin-left:0}
+  .again{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<nav class="topnav wrap" aria-label="App">
+  <a class="navlink" href="index.html">← Wine &amp; Sake Fridge</a>
+  <button type="button" class="iconbtn" id="refreshBtn" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+</nav>
+
+<header class="mast wrap">
+  <h1>Sunshine <em>Wine Club</em></h1>
+  <p class="summary" id="summary">Loading the wine list…</p>
+  <div class="shelf" id="shelf" aria-label="Every bottle, newest pickup first"></div>
+  <p class="shelf-key" id="shelfKey" hidden><span><i class="k-full"></i>In the rack</span><span><i class="k-open"></i>Opened</span><span><i class="k-done"></i>Finished</span></p>
+</header>
+
+<div class="bar" id="bar">
+  <div class="wrap bar-in">
+    <label class="search" for="q">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search wines, grapes, places or foods" autocomplete="off" aria-label="Search">
+    </label>
+    <div class="chips" id="colorChips" role="group" aria-label="Wine type"></div>
+    <div class="chips" id="statusChips" role="group" aria-label="Bottle status"></div>
+    <label class="sort" for="sort">Sort
+      <select id="sort">
+        <option value="pickup">Newest pickup</option>
+        <option value="rating">Our rating</option>
+        <option value="vintage">Vintage</option>
+        <option value="producer">Producer A–Z</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<main class="wrap" id="list"></main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" class="lb-close" id="lbClose">Close</button>
+  <img id="lbImg" alt="">
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fold = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  const clone = o => JSON.parse(JSON.stringify(o == null ? {} : o));
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ================= config (shared with the fridge page) ================= */
+  const PEOPLE = {chad:'Chad', nadia:'Nadia'};
+  const DATA_PATH = 'club.json';
+  const EMPTY = {version:1, months:{}, wines:{}, tastings:{}};
+  const LS = {token:'fridge_token', owner:'fridge_owner', repo:'fridge_repo', person:'fridge_person', view:'club_view'};
+  function cfgGet(k, d){ try{ const v = localStorage.getItem(LS[k] || k); return v == null || v === '' ? d : v; }catch(e){ return d; } }
+  function cfgSet(k, v){ try{ if(v == null || v === '') localStorage.removeItem(LS[k] || k); else localStorage.setItem(LS[k] || k, v); }catch(e){} }
+  const gh = () => ({token:cfgGet('token',''), owner:cfgGet('owner','clwesterl'), repo:cfgGet('repo','fridge-data')});
+
+  /* ================= GitHub Contents API ================= */
+  function bytesToB64(bytes){ let bin = ''; const CH = 0x8000; for(let i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH)); return btoa(bin); }
+  const strToB64 = s => bytesToB64(new TextEncoder().encode(s));
+  const b64ToStr = b64 => new TextDecoder().decode(Uint8Array.from(atob(String(b64).replace(/\s/g,'')), c => c.charCodeAt(0)));
+  function ghUrl(path){ const c = gh(); return 'https://api.github.com/repos/' + encodeURIComponent(c.owner) + '/' + encodeURIComponent(c.repo) + '/contents/' + path.split('/').map(encodeURIComponent).join('/'); }
+  function ghHeaders(accept){ return {'Authorization':'Bearer ' + gh().token, 'Accept':accept || 'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'}; }
+  function ghError(res){
+    if(res.status === 401) return {code:'auth', status:401};
+    if(res.status === 403) return {code:'forbidden', status:403};
+    if(res.status === 404) return {code:'notfound', status:404};
+    if(res.status === 409 || res.status === 422) return {code:'conflict', status:res.status};
+    return {code:'http', status:res.status};
+  }
+  async function ghGetJSON(path){
+    let res;
+    try{ res = await fetch(ghUrl(path), {headers:ghHeaders(), cache:'no-store'}); }catch(e){ throw {code:'network'}; }
+    if(res.status === 404) return null;
+    if(!res.ok) throw ghError(res);
+    const j = await res.json();
+    let text;
+    if(j.content && j.encoding === 'base64') text = b64ToStr(j.content);
+    else { const raw = await fetch(ghUrl(path), {headers:ghHeaders('application/vnd.github.raw'), cache:'no-store'}); if(!raw.ok) throw ghError(raw); text = await raw.text(); }
+    return {doc:JSON.parse(text), sha:j.sha};
+  }
+  async function ghPut(path, b64, sha, message){
+    const body = {message, content:b64};
+    if(sha) body.sha = sha;
+    let res;
+    try{ res = await fetch(ghUrl(path), {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, ghHeaders()), body:JSON.stringify(body)}); }catch(e){ throw {code:'network'}; }
+    if(!res.ok) throw ghError(res);
+    const j = await res.json();
+    return j.content && j.content.sha;
+  }
+  const imgCache = new Map();
+  function loadImg(path){
+    if(!imgCache.has(path)){
+      imgCache.set(path, fetch(ghUrl(path), {headers:ghHeaders('application/vnd.github.raw')})
+        .then(r => { if(!r.ok) throw ghError(r); return r.blob(); })
+        .then(b => URL.createObjectURL(b))
+        .catch(e => { imgCache.delete(path); throw e; }));
+    }
+    return imgCache.get(path);
+  }
+  function hydrateImages(){
+    document.querySelectorAll('img[data-img]').forEach(img => {
+      const p = img.dataset.img;
+      if(img.dataset.loaded === p) return;
+      img.dataset.loaded = p;
+      loadImg(p).then(u => { if(img.dataset.img === p) img.src = u; }).catch(() => {});
+    });
+  }
+
+  /* ================= helpers ================= */
+  const TYPES = {red:'Red', white:'White', rose:'Rosé', sparkling:'Sparkling', orange:'Orange', dessert:'Dessert'};
+  const typeLabel = c => TYPES[c] || (c ? c[0].toUpperCase() + c.slice(1) : 'Wine');
+  const swatch = c => TYPES[c] ? `var(--w-${c})` : 'var(--w-other)';
+
+  const S = {
+    phase:'loading', error:null, me:null, readOnly:false,
+    server:null, doc:clone(EMPTY), pending:[],
+    wines:new Map(), months:new Map(),
+    f:{q:'', color:'all', status:'all', sort:'pickup'},
+    drafts:new Map(), openNotes:new Set()
+  };
+  try{ const saved = JSON.parse(cfgGet('view', 'null')); if(saved && typeof saved === 'object') Object.assign(S.f, saved, {q:''}); }catch(e){}
+  const persistView = () => cfgSet('view', JSON.stringify({color:S.f.color, status:S.f.status, sort:S.f.sort}));
+  const myName = () => PEOPLE[S.me] || 'Someone';
+
+  function monthLabel(m){
+    const rec = S.months.get(m); if(rec && rec.label) return rec.label;
+    const [y,mo] = String(m||'').split('-').map(Number);
+    if(!y || !mo) return m || 'Undated';
+    return new Date(y, mo-1, 1).toLocaleString('en-US', {month:'long', year:'numeric'});
+  }
+  function monthShort(m){
+    const [y,mo] = String(m||'').split('-').map(Number);
+    if(!y || !mo) return m || '';
+    return new Date(y, mo-1, 1).toLocaleString('en-US', {month:'short', year:'numeric'});
+  }
+  function today(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function fmtDate(s){
+    s = String(s || '');
+    if(s.length > 10){ const t = new Date(s); return isNaN(t) ? '' : t.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}); }
+    const [y,m,d] = s.split('-').map(Number);
+    if(!y || !m || !d) return '';
+    return new Date(y, m-1, d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  }
+  const wineTitle = w => [w.producer, w.wine, w.vintage].filter(Boolean).join(' ');
+  function ratingsFor(id){
+    const out = [];
+    Object.entries(S.doc.tastings || {}).forEach(([person, m]) => {
+      const t = m && m[id];
+      if(t && ((t.stars|0) > 0 || (t.note && String(t.note).trim()))) out.push({person, stars:t.stars|0, note:t.note || '', at:t.updatedAt || ''});
+    });
+    return out;
+  }
+  function avgFor(id){ const r = ratingsFor(id).filter(x => x.stars > 0); return r.length ? r.reduce((a,b) => a + b.stars, 0) / r.length : null; }
+  function mine(id){ return ((S.doc.tastings || {})[S.me] || {})[id] || {}; }
+  const canEditShared = () => S.phase === 'ready' && !S.readOnly;
+  const canRate = () => canEditShared() && !!S.me;
+
+  function matches(w){
+    const f = S.f;
+    if(f.color !== 'all' && w.color !== f.color) return false;
+    if(f.status === 'rack' && (w.status === 'opened' || w.status === 'finished')) return false;
+    if(f.status === 'opened' && w.status !== 'opened') return false;
+    if(f.status === 'finished' && w.status !== 'finished') return false;
+    if(f.status === 'again' && !w.buyAgain) return false;
+    const q = fold(f.q).trim();
+    if(q){
+      const hay = fold([w.producer, w.wine, w.grape, w.vintage, w.appellation, w.region, w.country, typeLabel(w.color),
+        ...(w.nose||[]), ...(w.palate||[]), ...(w.pairings||[]), ...(w.facts||[]), w.notes, monthLabel(w.month)].join(' '));
+      if(!q.split(/\s+/).every(t => hay.includes(t))) return false;
+    }
+    return true;
+  }
+  function byPickup(a, b){
+    const ma = a[1].month || '', mb = b[1].month || '';
+    if(ma !== mb) return ma < mb ? 1 : -1;
+    return (a[1].order || 0) - (b[1].order || 0);
+  }
+  function sorted(entries){
+    const s = S.f.sort, arr = entries.slice();
+    if(s === 'vintage') arr.sort((a,b) => (b[1].vintage||0) - (a[1].vintage||0) || byPickup(a,b));
+    else if(s === 'producer') arr.sort((a,b) => String(a[1].producer).localeCompare(String(b[1].producer)) || byPickup(a,b));
+    else if(s === 'rating') arr.sort((a,b) => { const x = avgFor(a[0]), y = avgFor(b[0]); if(x == null && y == null) return byPickup(a,b); if(x == null) return 1; if(y == null) return -1; return (y - x) || byPickup(a,b); });
+    else arr.sort(byPickup);
+    return arr;
+  }
+  function hl(text){
+    const q = fold(S.f.q).trim();
+    const raw = String(text == null ? '' : text);
+    if(!q) return esc(raw);
+    const folded = fold(raw);
+    if(folded.length !== raw.length) return esc(raw);
+    for(const t of q.split(/\s+/)){
+      const i = folded.indexOf(t);
+      if(i >= 0) return esc(raw.slice(0,i)) + '<mark>' + esc(raw.slice(i, i + t.length)) + '</mark>' + esc(raw.slice(i + t.length));
+    }
+    return esc(raw);
+  }
+
+  /* ================= render ================= */
+  let queued = false;
+  function scheduleRender(){ if(queued) return; queued = true; setTimeout(() => { queued = false; renderAll(); }, 0); }
+  function renderAll(){ renderSummary(); renderShelf(); renderChips(); renderList(); hydrateImages(); $('#refreshBtn').classList.toggle('spin', S.phase === 'loading' || S.pending.length > 0); }
+
+  function renderSummary(){
+    const el = $('#summary');
+    $('#bar').hidden = S.phase !== 'ready';
+    if(S.phase === 'loading'){ el.textContent = 'Loading the wine list…'; return; }
+    const ws = [...S.wines.values()];
+    if(S.phase !== 'ready' || !ws.length){ el.textContent = 'Every wine from our club pickups, with the club’s notes and our own ratings.'; return; }
+    const months = new Set(ws.map(w => w.month)).size;
+    const opened = ws.filter(w => w.status === 'opened').length;
+    const finished = ws.filter(w => w.status === 'finished').length;
+    const again = ws.filter(w => w.buyAgain).length;
+    el.innerHTML = `<b>${ws.length}</b> ${ws.length === 1 ? 'wine' : 'wines'} from <b>${months}</b> ${months === 1 ? 'pickup' : 'pickups'} · <b>${ws.length - opened - finished}</b> in the rack · <b>${opened}</b> open · <b>${finished}</b> finished` + (again ? ` · <b>${again}</b> to buy again` : '');
+  }
+
+  function bottleSvg(){
+    return '<svg viewBox="0 0 24 80" aria-hidden="true"><path class="glass" d="M9.5 1h5v22c0 5 6.5 7 6.5 14v39a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V37c0-7 6.5-9 6.5-14z"/><rect class="foil" x="9" y="0.5" width="6" height="11" rx="1"/><rect class="label" x="5.5" y="48" width="13" height="15" rx="1.5"/></svg>';
+  }
+  function renderShelf(){
+    const el = $('#shelf');
+    const all = S.phase === 'ready' ? [...S.wines.entries()].sort(byPickup) : [];
+    el.innerHTML = all.map(([id, w]) => {
+      const open = w.status === 'opened', done = w.status === 'finished';
+      const lbl = `${w.producer} ${w.wine} ${w.vintage || 'NV'}, ${done ? 'finished' : open ? 'opened' : 'in the rack'}`;
+      const yr = w.vintage ? '’' + String(w.vintage).slice(-2) : 'NV';
+      return `<button type="button" class="bottle${open ? ' is-open' : ''}${done ? ' is-done' : ''}" style="--sw:${swatch(w.color)}" data-go="${esc(id)}" title="${esc(lbl)}" aria-label="${esc(lbl)}">${bottleSvg()}<span class="yr">${esc(yr)}</span></button>`;
+    }).join('');
+    $('#shelfKey').hidden = all.length === 0;
+  }
+
+  function renderChips(){
+    if(S.phase !== 'ready'){ $('#colorChips').innerHTML = ''; $('#statusChips').innerHTML = ''; return; }
+    const ws = [...S.wines.values()];
+    const counts = {};
+    ws.forEach(w => { counts[w.color] = (counts[w.color] || 0) + 1; });
+    const order = Object.keys(TYPES).filter(k => counts[k]).concat(Object.keys(counts).filter(k => !TYPES[k]));
+    if(S.f.color !== 'all' && !counts[S.f.color]) S.f.color = 'all';
+    $('#colorChips').innerHTML = [`<button type="button" class="chip" data-color="all" aria-pressed="${S.f.color === 'all'}">All types</button>`]
+      .concat(order.map(k => `<button type="button" class="chip" data-color="${esc(k)}" aria-pressed="${S.f.color === k}" style="--sw:${swatch(k)}"><span class="dot"></span>${esc(typeLabel(k))}<span class="n">${counts[k]}</span></button>`)).join('');
+    const st = [['all','Any'],['rack','In the rack'],['opened','Opened'],['finished','Finished'],['again','Buy again']];
+    $('#statusChips').innerHTML = st.map(([k,l]) => `<button type="button" class="chip" data-status="${k}" aria-pressed="${S.f.status === k}">${l}</button>`).join('');
+    $('#sort').value = S.f.sort;
+  }
+
+  function tagRow(label, items, cls){
+    if(!items || !items.length) return '';
+    return `<div><dt>${label}</dt><dd>${items.map(t => `<span class="tag${cls ? ' ' + cls : ''}">${hl(t)}</span>`).join('')}</dd></div>`;
+  }
+  function starsRO(n){
+    let s = '';
+    for(let i = 1; i <= 5; i++) s += `<span class="${i <= n ? 'on' : ''}">★</span>`;
+    return `<span class="stars ro" aria-label="${n} of 5 stars">${s}</span>`;
+  }
+
+  function oursBlock(id, w){
+    const st = w.status === 'opened' || w.status === 'finished' ? w.status : 'rack';
+    const opened = st !== 'rack';
+    let head = '';
+    if(canEditShared()){
+      head += `<div class="seg" role="group" aria-label="Bottle status">
+        <button type="button" data-act="status" data-id="${esc(id)}" data-v="rack" aria-pressed="${st === 'rack'}">In the rack</button>
+        <button type="button" data-act="status" data-id="${esc(id)}" data-v="opened" aria-pressed="${st === 'opened'}">Opened</button>
+        <button type="button" data-act="status" data-id="${esc(id)}" data-v="finished" aria-pressed="${st === 'finished'}">Finished</button>
+      </div>`;
+      if(st === 'opened') head += `<label class="opened-on" for="od-${esc(id)}">on <input type="date" id="od-${esc(id)}" data-act="openedOn" data-id="${esc(id)}" value="${esc(w.openedOn || '')}"></label>`;
+      if(st === 'finished') head += `<label class="opened-on" for="fd-${esc(id)}">on <input type="date" id="fd-${esc(id)}" data-act="finishedOn" data-id="${esc(id)}" value="${esc(w.finishedOn || '')}"></label>`;
+      head += `<button type="button" class="again" data-act="again" data-id="${esc(id)}" aria-pressed="${!!w.buyAgain}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Buy again</button>`;
+    } else {
+      head += `<span class="pill">${st === 'finished' ? 'Finished' + (w.finishedOn ? ' ' + esc(fmtDate(w.finishedOn)) : '') : st === 'opened' ? 'Opened' + (w.openedOn ? ' ' + esc(fmtDate(w.openedOn)) : '') : 'In the rack'}</span>`;
+      if(w.buyAgain) head += `<span class="pill on">Buy again</span>`;
+    }
+
+    const all = ratingsFor(id);
+    const avg = avgFor(id);
+    const rated = all.filter(r => r.stars > 0).length;
+    let rows = '';
+    if(canRate()){
+      const m = mine(id);
+      const stars = m.stars | 0;
+      const saved = m.note || '';
+      const draft = S.drafts.has(id) ? S.drafts.get(id) : saved;
+      let sb = '';
+      for(let i = 1; i <= 5; i++) sb += `<button type="button" class="star${i <= stars ? ' on' : ''}" data-act="star" data-id="${esc(id)}" data-v="${i}" aria-label="${i} of 5 stars" aria-pressed="${i === stars}">★</button>`;
+      rows += `<div class="taste">
+        <div class="who"><span class="av" aria-hidden="true">${esc(myName()[0])}</span><span>You</span></div>
+        <div class="stars" role="group" aria-label="Your rating">${sb}</div>
+        <div class="note-wrap">
+          <textarea id="note-${esc(id)}" data-act="note" data-id="${esc(id)}" rows="2" placeholder="${opened ? 'How was it?' : 'Your tasting note, once it’s open'}" aria-label="Your tasting note">${esc(draft)}</textarea>
+          <div class="note-row"><span class="when">${m.updatedAt ? 'Saved ' + esc(fmtDate(m.updatedAt)) : ''}</span><button type="button" class="save" data-act="savenote" data-id="${esc(id)}" ${draft.trim() === saved ? 'hidden' : ''}>Save note</button></div>
+        </div>
+      </div>`;
+    }
+    all.filter(r => !(canRate() && r.person === S.me)).forEach(r => {
+      const name = PEOPLE[r.person] || r.person;
+      rows += `<div class="taste">
+        <div class="who"><span class="av" aria-hidden="true">${esc(String(name)[0] || '?')}</span><span>${r.person === S.me ? 'You' : esc(name)}</span></div>
+        ${r.stars ? starsRO(r.stars) : '<span class="hint">No stars yet</span>'}
+        ${r.note ? `<p class="their-note">${esc(r.note)}</p>` : ''}
+      </div>`;
+    });
+    if(!rows) rows = `<p class="hint">No ratings yet.</p>`;
+
+    return `<section class="ours" aria-label="Our bottle">
+      <div class="ours-head">${head}</div>
+      <p class="rate-head"><span>Our ratings</span>${avg != null ? `<span class="avg"><i>★</i> ${avg.toFixed(1)} <span class="when">· ${rated} ${rated === 1 ? 'rating' : 'ratings'}</span></span>` : ''}</p>
+      ${rows}
+    </section>`;
+  }
+
+  function wineCard(id, w){
+    const place = [w.appellation, [w.region, w.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    const facts = (w.facts && w.facts.length) ? `<ul class="facts">${w.facts.map(f => `<li>${hl(f)}</li>`).join('')}</ul>` : '';
+    const done = w.status === 'finished';
+    return `<article class="wine${done ? ' is-done' : ''}" id="w-${esc(id)}" style="--sw:${swatch(w.color)}">${done ? `<div class="done-tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Finished${w.finishedOn ? ' ' + esc(fmtDate(w.finishedOn)) : ''}</div>` : ''}
+      <div class="wine-top">
+        <span class="type"><span class="swatch"></span>${esc(typeLabel(w.color))}${w.grape ? ' · ' + hl(w.grape) : ''}</span>
+        <span class="vintage" title="Vintage">${w.vintage ? esc(w.vintage) : 'NV'}</span>
+      </div>
+      <h3 class="name"><span class="producer">${hl(w.producer)}</span>${w.wine ? `<span class="cuvee">${hl(w.wine)}</span>` : ''}</h3>
+      <p class="place"><span>${hl(place)}</span>${S.f.sort !== 'pickup' && w.month ? `<span class="from">${esc(monthShort(w.month))} pickup</span>` : ''}</p>
+      <dl class="profile">${tagRow('Nose', w.nose)}${tagRow('Palate', w.palate)}${tagRow('Pair with', w.pairings, 'pair')}</dl>
+      ${facts}
+      ${w.notes ? `<details class="clubnotes" data-id="${esc(id)}"${S.openNotes.has(id) ? ' open' : ''}><summary>Club notes</summary><p>${hl(w.notes)}</p></details>` : ''}
+      ${oursBlock(id, w)}
+    </article>`;
+  }
+
+  function pickupHead(m){
+    const rec = S.months.get(m) || {};
+    const bits = [rec.selection, rec.curator ? `Notes by ${rec.curator}${rec.curatorTitle ? ', ' + rec.curatorTitle : ''}` : ''].filter(Boolean).join(' · ');
+    const thumb = rec.cardPath ? `<button type="button" class="cardthumb" data-act="card" data-path="${esc(rec.cardPath)}"><img data-img="${esc(rec.cardPath)}" alt="" loading="lazy"><span>Club card</span></button>` : '';
+    return `<header class="pickup-head"><div><p class="eyebrow">Pickup</p><h2>${esc(monthLabel(m))}</h2>${bits ? `<p class="sel">${esc(bits)}</p>` : ''}</div>${thumb}</header>`;
+  }
+
+  function renderList(){
+    const list = $('#list');
+    const ae = document.activeElement;
+    const keep = ae && ae.id && list.contains(ae) ? {id:ae.id, sel: (ae.tagName === 'TEXTAREA') ? [ae.selectionStart, ae.selectionEnd] : null} : null;
+
+    if(S.phase === 'loading'){ list.innerHTML = `<div class="emptystate"><p>Loading the wine list…</p></div>`; return; }
+    if(S.phase === 'setup'){
+      list.innerHTML = `<div class="emptystate"><h2>Connect on the fridge page first</h2><p>This page uses the same access token and name as the Wine &amp; Sake Fridge. Set them up there once on this device, then come back.</p><p><a class="btn" href="index.html">Open the fridge page</a></p></div>`;
+      return;
+    }
+    if(S.phase === 'error'){
+      list.innerHTML = `<div class="emptystate"><h2>The wine list didn’t load</h2><p>${esc(S.error || 'Something went wrong.')}</p><p><button type="button" class="btn" data-act="retry">Try again</button> <a class="btn" href="index.html">Fridge settings</a></p></div>`;
+      return;
+    }
+    if(!S.wines.size){
+      list.innerHTML = `<div class="emptystate"><h2>No wines yet</h2><p>Send Claude a photo of a club card and each wine on it will show up here.</p></div>`;
+      return;
+    }
+    const shown = sorted([...S.wines.entries()].filter(([, w]) => matches(w)));
+    if(!shown.length){
+      list.innerHTML = `<div class="emptystate"><h2>No matches</h2><p>Nothing fits these filters${S.f.q ? ` and “${esc(S.f.q)}”` : ''}. <button type="button" class="linkbtn" data-act="clear">Show every wine</button></p></div>`;
+      return;
+    }
+    let html = '';
+    if(S.f.sort === 'pickup'){
+      const groups = [];
+      shown.forEach(([id, w]) => {
+        const g = groups[groups.length - 1];
+        if(g && g.m === w.month) g.items.push([id, w]); else groups.push({m:w.month, items:[[id, w]]});
+      });
+      html = groups.map(g => `<section class="pickup" aria-label="${esc(monthLabel(g.m))}">${pickupHead(g.m)}<div class="grid">${g.items.map(([id, w]) => wineCard(id, w)).join('')}</div></section>`).join('');
+    } else {
+      html = `<div class="flat"><div class="grid">${shown.map(([id, w]) => wineCard(id, w)).join('')}</div></div>`;
+    }
+    list.innerHTML = html;
+
+    if(keep){
+      const el = document.getElementById(keep.id);
+      if(el){ el.focus({preventScroll:true}); if(keep.sel && el.setSelectionRange){ try{ el.setSelectionRange(keep.sel[0], keep.sel[1]); }catch(e){} } }
+    }
+  }
+
+  /* ================= saving ================= */
+  let toastTimer = null;
+  function toast(msg, err){
+    const t = $('#toast');
+    t.textContent = msg; t.classList.toggle('err', !!err); t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, err ? 4500 : 1600);
+  }
+  function errText(e){
+    const code = e && e.code;
+    if(code === 'auth') return 'GitHub didn’t accept the access token. Check it in the fridge page’s settings.';
+    if(code === 'forbidden') return 'This token can read the list but not save changes.';
+    if(code === 'notfound') return 'The data repo wasn’t found with this token. Check the fridge page’s settings.';
+    if(code === 'network') return 'Couldn’t reach GitHub. Check your connection.';
+    return 'GitHub returned an error' + (e && e.status ? ' (' + e.status + ')' : '') + '.';
+  }
+  function syncFromDoc(){
+    S.wines = new Map(Object.entries(S.doc.wines || {}));
+    S.months = new Map(Object.entries(S.doc.months || {}));
+  }
+  function rebuildLocal(){
+    S.doc = clone(S.server ? S.server.doc : EMPTY);
+    ['months','wines','tastings'].forEach(k => { if(!S.doc[k] || typeof S.doc[k] !== 'object') S.doc[k] = {}; });
+    S.pending.forEach(p => { try{ p.mutate(S.doc); }catch(e){} });
+    syncFromDoc();
+  }
+  let draining = false;
+  function commit(message, mutate){
+    const item = {message:myName() + ': ' + message, mutate};
+    let resolve; item.done = new Promise(r => { resolve = r; }); item.resolve = resolve;
+    S.pending.push(item);
+    try{ mutate(S.doc); }catch(e){}
+    syncFromDoc(); scheduleRender();
+    drain();
+    return item.done;
+  }
+  async function drain(){
+    if(draining) return;
+    draining = true;
+    while(S.pending.length){
+      const item = S.pending[0];
+      let ok = false, err = null;
+      for(let attempt = 0; attempt < 4 && !ok; attempt++){
+        try{
+          if(attempt > 0 || !S.server) S.server = (await ghGetJSON(DATA_PATH)) || {doc:clone(EMPTY), sha:null};
+          const next = clone(S.server.doc);
+          ['months','wines','tastings'].forEach(k => { if(!next[k] || typeof next[k] !== 'object') next[k] = {}; });
+          item.mutate(next);
+          const sha = await ghPut(DATA_PATH, strToB64(JSON.stringify(next, null, 1)), S.server.sha, item.message);
+          S.server = {doc:next, sha};
+          ok = true;
+        }catch(e){ err = e; if(!(e && e.code === 'conflict')) break; }
+      }
+      S.pending.shift();
+      if(!ok){ if(err && err.code === 'forbidden') S.readOnly = true; toast('Not saved. ' + errText(err), true); }
+      else toast('Saved');
+      item.resolve(ok);
+      rebuildLocal(); scheduleRender();
+    }
+    draining = false;
+  }
+  async function refresh(quiet){
+    if(S.phase !== 'ready' || S.pending.length || draining) return;
+    try{
+      const got = await ghGetJSON(DATA_PATH);
+      if(S.pending.length || draining) return;
+      S.server = got || {doc:clone(EMPTY), sha:null};
+      rebuildLocal(); scheduleRender();
+      if(!quiet) toast('Up to date');
+    }catch(e){ if(!quiet) toast(errText(e), true); }
+  }
+  function writeWine(id, patch, what){
+    const w = S.wines.get(id) || {};
+    commit(`${what} ${wineTitle(w)}`, doc => { if(doc.wines[id]) Object.assign(doc.wines[id], patch); });
+  }
+  function saveMine(id, patch, what){
+    if(!S.me) return;
+    const stamp = new Date().toISOString();
+    const w = S.wines.get(id) || {};
+    commit(`${what} ${wineTitle(w)}`, doc => {
+      doc.tastings = doc.tastings || {};
+      const m = doc.tastings[S.me] = doc.tastings[S.me] || {};
+      m[id] = Object.assign({}, m[id] || {}, patch, {updatedAt:stamp});
+    });
+  }
+  function commitNote(id){
+    if(!S.drafts.has(id)) return;
+    const v = S.drafts.get(id).trim(); S.drafts.delete(id);
+    if(v === (mine(id).note || '')){ scheduleRender(); return; }
+    saveMine(id, {note:v}, 'note on');
+  }
+
+  /* ================= events ================= */
+  const list = $('#list');
+  list.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if(!b) return;
+    const id = b.dataset.id, act = b.dataset.act;
+    if(act === 'star'){ const n = +b.dataset.v; const cur = mine(id).stars | 0; saveMine(id, {stars: n === cur ? 0 : n}, n === cur ? 'cleared rating for' : `rated ${n}★`); }
+    else if(act === 'status'){
+      const w = S.wines.get(id); const v = b.dataset.v;
+      if(!w || (w.status || 'rack') === v) return;
+      const patch = {status:v};
+      if(v === 'opened' && !w.openedOn) patch.openedOn = today();
+      if(v === 'finished' && !w.finishedOn) patch.finishedOn = today();
+      writeWine(id, patch, v === 'rack' ? 'back in the rack:' : v === 'opened' ? 'opened' : 'finished');
+    }
+    else if(act === 'again'){ const w = S.wines.get(id); if(w) writeWine(id, {buyAgain: !w.buyAgain}, w.buyAgain ? 'unmark buy again:' : 'buy again:'); }
+    else if(act === 'savenote'){ commitNote(id); }
+    else if(act === 'card'){ openLightbox(b.dataset.path); }
+    else if(act === 'retry'){ start(); }
+    else if(act === 'clear'){ S.f = {q:'', color:'all', status:'all', sort:S.f.sort}; $('#q').value = ''; persistView(); renderAll(); }
+  });
+  list.addEventListener('input', e => {
+    const t = e.target;
+    if(t.dataset && t.dataset.act === 'note'){
+      S.drafts.set(t.dataset.id, t.value);
+      const btn = t.closest('.note-wrap').querySelector('[data-act="savenote"]');
+      if(btn) btn.hidden = t.value.trim() === (mine(t.dataset.id).note || '');
+    }
+  });
+  list.addEventListener('focusout', e => { const t = e.target; if(t.dataset && t.dataset.act === 'note') commitNote(t.dataset.id); });
+  list.addEventListener('keydown', e => {
+    const t = e.target;
+    if(t.dataset && t.dataset.act === 'note' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); commitNote(t.dataset.id); }
+  });
+  list.addEventListener('change', e => {
+    const t = e.target;
+    if(t.dataset && t.dataset.act === 'openedOn' && t.value){ writeWine(t.dataset.id, {openedOn:t.value}, 'opened date for'); }
+    if(t.dataset && t.dataset.act === 'finishedOn' && t.value){ writeWine(t.dataset.id, {finishedOn:t.value}, 'finished date for'); }
+  });
+  list.addEventListener('toggle', e => {
+    const d = e.target;
+    if(d.classList && d.classList.contains('clubnotes')){ if(d.open) S.openNotes.add(d.dataset.id); else S.openNotes.delete(d.dataset.id); }
+  }, true);
+
+  $('#shelf').addEventListener('click', e => {
+    const b = e.target.closest('[data-go]'); if(!b) return;
+    const id = b.dataset.go;
+    const w = S.wines.get(id);
+    if(w && !matches(w)){ S.f = {q:'', color:'all', status:'all', sort:S.f.sort}; $('#q').value = ''; persistView(); renderAll(); }
+    const el = document.getElementById('w-' + id);
+    if(el) el.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'start'});
+  });
+  $('#q').addEventListener('input', e => { S.f.q = e.target.value; renderList(); hydrateImages(); });
+  $('#colorChips').addEventListener('click', e => { const b = e.target.closest('[data-color]'); if(!b) return; S.f.color = b.dataset.color; persistView(); renderChips(); renderList(); hydrateImages(); });
+  $('#statusChips').addEventListener('click', e => { const b = e.target.closest('[data-status]'); if(!b) return; S.f.status = b.dataset.status; persistView(); renderChips(); renderList(); hydrateImages(); });
+  $('#sort').addEventListener('change', e => { S.f.sort = e.target.value; persistView(); renderList(); hydrateImages(); });
+  $('#refreshBtn').addEventListener('click', () => { if(S.phase === 'ready') refresh(false); else start(); });
+
+  function openLightbox(path){ $('#lbImg').removeAttribute('src'); $('#lightbox').hidden = false; $('#lbClose').focus(); loadImg(path).then(u => { $('#lbImg').src = u; }).catch(() => {}); }
+  function closeLightbox(){ $('#lightbox').hidden = true; }
+  $('#lightbox').addEventListener('click', e => { if(e.target.id !== 'lbImg') closeLightbox(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('#lightbox').hidden) closeLightbox(); });
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') refresh(true); });
+  window.addEventListener('beforeunload', e => { if(S.pending.length){ e.preventDefault(); e.returnValue = ''; } });
+
+  /* ================= start ================= */
+  async function start(){
+    S.phase = 'loading'; renderAll();
+    S.me = PEOPLE[cfgGet('person', '')] ? cfgGet('person', '') : null;
+    if(!gh().token || !S.me){ S.phase = 'setup'; renderAll(); return; }
+    try{
+      S.server = (await ghGetJSON(DATA_PATH)) || {doc:clone(EMPTY), sha:null};
+      S.phase = 'ready'; S.error = null;
+      rebuildLocal();
+    }catch(e){
+      S.error = errText(e);
+      S.phase = 'error';
+    }
+    renderAll();
+  }
+  start();
+})();
+</script>
+</body>
+</html>
