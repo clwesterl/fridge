@@ -54,6 +54,11 @@ const server = http.createServer((req, res) => {
     const {p, errs, ctx} = await newPage(1280, 1300, 'light', true);
     await p.goto(base + 'index.html');
     await p.waitForSelector('.slot.full');
+    const countries = await p.locator('#country option').allInnerTexts();
+    await p.selectOption('#country', {index:1});
+    console.log('country filter:', countries.join(' | '), '→', await p.locator('#country').inputValue(), 'items', await p.locator('.item').count(), 'lit slots', await p.locator('.slot.full:not(.dim)').count());
+    await p.screenshot({path:outDir + '/country-filter.png'});
+    await p.selectOption('#country', 'all');
     await p.click('[data-slot="r1c3"]');
     await p.waitForTimeout(400);
     await p.screenshot({path:outDir + '/fridge-desktop.png', fullPage:true});

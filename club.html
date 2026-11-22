@@ -114,7 +114,8 @@ h1 em{font-style:italic;color:var(--accent)}
 .chip .dot{width:9px;height:9px;border-radius:50%;background:var(--sw)}
 .chip .n{font:500 11px/1 var(--mono);opacity:.7}
 .sort{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-left:auto}
-.sort select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink)}
+.sort select,.ctry select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink)}
+.ctry{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 
 /* List */
 main{padding-block:8px 72px}
@@ -245,6 +246,9 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     </label>
     <div class="chips" id="colorChips" role="group" aria-label="Wine type"></div>
     <div class="chips" id="statusChips" role="group" aria-label="Bottle status"></div>
+    <label class="ctry" for="country" id="countryWrap" hidden>Country
+      <select id="country"></select>
+    </label>
     <label class="sort" for="sort">Sort
       <select id="sort">
         <option value="pickup">Newest pickup</option>
@@ -341,11 +345,11 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     phase:'loading', error:null, me:null, readOnly:false,
     server:null, doc:clone(EMPTY), pending:[],
     wines:new Map(), months:new Map(),
-    f:{q:'', color:'all', status:'all', sort:'pickup'},
+    f:{q:'', color:'all', status:'all', country:'all', sort:'pickup'},
     drafts:new Map(), openNotes:new Set()
   };
   try{ const saved = JSON.parse(cfgGet('view', 'null')); if(saved && typeof saved === 'object') Object.assign(S.f, saved, {q:''}); }catch(e){}
-  const persistView = () => cfgSet('view', JSON.stringify({color:S.f.color, status:S.f.status, sort:S.f.sort}));
+  const persistView = () => cfgSet('view', JSON.stringify({color:S.f.color, status:S.f.status, country:S.f.country, sort:S.f.sort}));
   const myName = () => PEOPLE[S.me] || 'Someone';
 
   function monthLabel(m){
@@ -384,6 +388,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   function matches(w){
     const f = S.f;
     if(f.color !== 'all' && w.color !== f.color) return false;
+    if(f.country !== 'all' && String(w.country || '').trim() !== f.country) return false;
     if(f.status === 'rack' && (w.status === 'opened' || w.status === 'finished')) return false;
     if(f.status === 'opened' && w.status !== 'opened') return false;
     if(f.status === 'finished' && w.status !== 'finished') return false;
@@ -466,6 +471,13 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
       .concat(order.map(k => `<button type="button" class="chip" data-color="${esc(k)}" aria-pressed="${S.f.color === k}" style="--sw:${swatch(k)}"><span class="dot"></span>${esc(typeLabel(k))}<span class="n">${counts[k]}</span></button>`)).join('');
     const st = [['all','Any'],['rack','In the rack'],['opened','Opened'],['finished','Finished'],['again','Buy again']];
     $('#statusChips').innerHTML = st.map(([k,l]) => `<button type="button" class="chip" data-status="${k}" aria-pressed="${S.f.status === k}">${l}</button>`).join('');
+    const cc = {};
+    ws.forEach(w => { const c = String(w.country || '').trim(); if(c) cc[c] = (cc[c] || 0) + 1; });
+    const countries = Object.keys(cc).sort((a, b) => a.localeCompare(b));
+    if(S.f.country !== 'all' && !cc[S.f.country]) S.f.country = 'all';
+    $('#country').innerHTML = `<option value="all">All countries</option>` + countries.map(c => `<option value="${esc(c)}">${esc(c)} (${cc[c]})</option>`).join('');
+    $('#country').value = S.f.country;
+    $('#countryWrap').hidden = countries.length < 2 && S.f.country === 'all';
     $('#sort').value = S.f.sort;
   }
 
@@ -710,7 +722,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     else if(act === 'savenote'){ commitNote(id); }
     else if(act === 'card'){ openLightbox(b.dataset.path); }
     else if(act === 'retry'){ start(); }
-    else if(act === 'clear'){ S.f = {q:'', color:'all', status:'all', sort:S.f.sort}; $('#q').value = ''; persistView(); renderAll(); }
+    else if(act === 'clear'){ S.f = {q:'', color:'all', status:'all', country:'all', sort:S.f.sort}; $('#q').value = ''; persistView(); renderAll(); }
   });
   list.addEventListener('input', e => {
     const t = e.target;
@@ -739,7 +751,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     const b = e.target.closest('[data-go]'); if(!b) return;
     const id = b.dataset.go;
     const w = S.wines.get(id);
-    if(w && !matches(w)){ S.f = {q:'', color:'all', status:'all', sort:S.f.sort}; $('#q').value = ''; persistView(); renderAll(); }
+    if(w && !matches(w)){ S.f = {q:'', color:'all', status:'all', country:'all', sort:S.f.sort}; $('#q').value = ''; persistView(); renderAll(); }
     const el = document.getElementById('w-' + id);
     if(el) el.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'start'});
   });
@@ -747,6 +759,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   $('#colorChips').addEventListener('click', e => { const b = e.target.closest('[data-color]'); if(!b) return; S.f.color = b.dataset.color; persistView(); renderChips(); renderList(); hydrateImages(); });
   $('#statusChips').addEventListener('click', e => { const b = e.target.closest('[data-status]'); if(!b) return; S.f.status = b.dataset.status; persistView(); renderChips(); renderList(); hydrateImages(); });
   $('#sort').addEventListener('change', e => { S.f.sort = e.target.value; persistView(); renderList(); hydrateImages(); });
+  $('#country').addEventListener('change', e => { S.f.country = e.target.value; persistView(); renderList(); hydrateImages(); });
   $('#refreshBtn').addEventListener('click', () => { if(S.phase === 'ready') refresh(false); else start(); });
 
   function openLightbox(path){ $('#lbImg').removeAttribute('src'); $('#lightbox').hidden = false; $('#lbClose').focus(); loadImg(path).then(u => { $('#lbImg').src = u; }).catch(() => {}); }

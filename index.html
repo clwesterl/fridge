@@ -345,6 +345,9 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
         <input id="q" type="search" placeholder="Search bottles, grapes, places or foods" autocomplete="off" aria-label="Search">
       </label>
       <div class="chips" id="typeChips" role="group" aria-label="Type"></div>
+      <label class="sortsel" for="country" id="countryWrap" hidden>Country
+        <select id="country"></select>
+      </label>
       <label class="sortsel" for="fsort" id="fsortWrap" hidden>Sort
         <select id="fsort">
           <option value="recent">Recently finished</option>
@@ -530,7 +533,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     server:null, doc:clone(EMPTY), pending:[],
     wines:new Map(), bottles:new Map(),
     view:'fridge', sel:null, fsel:null, ping:false,
-    q:'', type:'all', fsort:'recent',
+    q:'', type:'all', country:'all', fsort:'recent',
     placing:null, confirmRemove:null,
     drafts:new Map()
   };
@@ -608,11 +611,12 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   }
   function matchesWine(w, b){
     if(S.type !== 'all' && (w.type || 'other') !== S.type) return false;
+    if(S.country !== 'all' && String(w.country || '').trim() !== S.country) return false;
     const q = fold(S.q).trim();
     if(q){ const hay = hayOf(w, b); if(!q.split(/\s+/).every(t => hay.includes(t))) return false; }
     return true;
   }
-  function filtering(){ return S.type !== 'all' || !!S.q.trim(); }
+  function filtering(){ return S.type !== 'all' || S.country !== 'all' || !!S.q.trim(); }
   function hl(text){
     const q = fold(S.q).trim(), raw = String(text == null ? '' : text);
     if(!q) return esc(raw);
@@ -708,6 +712,14 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     $('#typeChips').innerHTML = keys.length < 2 && S.type === 'all' ? '' :
       [`<button type="button" class="chip" data-type="all" aria-pressed="${S.type === 'all'}">All</button>`]
       .concat(keys.map(k => `<button type="button" class="chip" data-type="${k}" aria-pressed="${S.type === k}" style="--sw:${swatch(k)}"><span class="dot"></span>${esc(k === 'dessert' ? 'Dessert' : typeLabel(k))}<span class="n">${counts[k]}</span></button>`)).join('');
+    const cc = {};
+    src.forEach(w => { const c = String(w.country || '').trim(); if(c) cc[c] = (cc[c] || 0) + 1; });
+    const countries = Object.keys(cc).sort((a, b) => a.localeCompare(b));
+    if(S.country !== 'all' && !cc[S.country]) S.country = 'all';
+    const sel = $('#country');
+    sel.innerHTML = `<option value="all">All countries</option>` + countries.map(c => `<option value="${esc(c)}">${esc(c)} (${cc[c]})</option>`).join('');
+    sel.value = S.country;
+    $('#countryWrap').hidden = countries.length < 2 && S.country === 'all';
   }
 
   function tagRow(label, items, cls){
@@ -1192,7 +1204,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
           applyWine(doc);
           doc.bottles[id] = {wine:key, vintage:v.vintage, slot, status:'in', opened:false, addedOn:today(), finishedOn:'', purchasedOn:v.purchasedOn, purchasedFrom:v.purchasedFrom};
         }).then(ok => { if(ok) toast(slot ? `Added to ${slotName(slot).toLowerCase()}` : 'Added to the fridge'); });
-        closeSheet(); S.view = 'fridge'; setHash(); S.sel = id; S.ping = true; S.q = ''; S.type = 'all'; fld('q').value = '';
+        closeSheet(); S.view = 'fridge'; setHash(); S.sel = id; S.ping = true; S.q = ''; S.type = 'all'; S.country = 'all'; fld('q').value = '';
         scheduleRender();
         setTimeout(() => { const el = document.getElementById('b-' + id); if(el) el.scrollIntoView({behavior:reduced ? 'auto' : 'smooth', block:'nearest'}); }, 60);
       }
@@ -1252,6 +1264,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#q').addEventListener('input', e => { S.q = e.target.value; renderFridge(); renderList(); hydrateImages(); });
   $('#typeChips').addEventListener('click', e => { const b = e.target.closest('[data-type]'); if(!b) return; S.type = b.dataset.type; renderAll(); });
+  $('#country').addEventListener('change', e => { S.country = e.target.value; renderAll(); });
   $('#fsort').addEventListener('change', e => { S.fsort = e.target.value; persist(); renderList(); hydrateImages(); });
 
   $('#fridge').addEventListener('click', e => {
@@ -1264,7 +1277,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     if(S.sel === id){ S.sel = null; renderAll(); return; }
     S.sel = id; S.ping = true; S.confirmRemove = null;
     const w = wineOf(S.bottles.get(id));
-    if(!matchesWine(w, S.bottles.get(id))){ S.q = ''; S.type = 'all'; $('#q').value = ''; }
+    if(!matchesWine(w, S.bottles.get(id))){ S.q = ''; S.type = 'all'; S.country = 'all'; $('#q').value = ''; }
     renderAll();
     const el = document.getElementById('b-' + id);
     if(el) el.scrollIntoView({behavior:reduced ? 'auto' : 'smooth', block:window.innerWidth < 900 ? 'start' : 'nearest'});
@@ -1302,7 +1315,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     else if(act === 'savenote') commitNote(key);
     else if(act === 'photo') openLightbox(b.dataset.path);
     else if(act === 'add') openSheet('add');
-    else if(act === 'clear'){ S.q = ''; S.type = 'all'; $('#q').value = ''; renderAll(); }
+    else if(act === 'clear'){ S.q = ''; S.type = 'all'; S.country = 'all'; $('#q').value = ''; renderAll(); }
     else if(act === 'retry') start();
     else if(act === 'settings') openSettings();
     else if(act === 'connect') connectFromPanel();
