@@ -39,6 +39,7 @@
   --w-dessert:#A9661F;
   --w-sake:#8FB3C4;
   --w-other:#9C8A92;
+  --club:#D9782A;
   --shadow:0 1px 2px rgba(42,26,33,.05),0 8px 24px rgba(42,26,33,.05);
   --scrim:rgba(20,10,14,.55);
   --display:"Bodoni Moda","Bodoni 72",Didot,"Times New Roman",serif;
@@ -51,6 +52,7 @@
     --bg:#161013;--surface:#1F171B;--sunk:#291F24;--ink:#F2E8EC;--muted:#AE9BA4;--line:#3A2D33;
     --accent:#E07C9B;--accent-ink:#1B0F14;--accent-soft:#3A2129;--star:#E5B65A;--star-off:#4A3B42;--danger:#F08A80;
     --w-red:#B4365C;--w-white:#E2C564;--w-rose:#EE9FB0;--w-sparkling:#E9DDA5;--w-orange:#E19A55;--w-dessert:#C98436;--w-sake:#9CC3D6;--w-other:#8F7C85;
+    --club:#F5B26A;
     --shadow:0 1px 2px rgba(0,0,0,.35);--scrim:rgba(5,2,4,.7);
     color-scheme:dark;
   }
@@ -124,6 +126,10 @@ h1 em{font-style:italic;color:var(--accent)}
 .slot.vacant .disc::after{display:none}
 .slot.vacant .slab{color:var(--muted)}
 .slot.vacant:hover .disc{opacity:.9}
+.slot.club .slab{color:var(--club);font-weight:600}
+.item.club .it-prod,.item.club .it-name{color:var(--club)}
+.club-key{margin:8px 2px 0;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.club-key b{color:var(--club);font-weight:600}
 .slot.sel .disc{outline:3px solid var(--accent);outline-offset:3px}
 .slot.sel .slab{font-weight:600;color:var(--accent)}
 .fridge.has-sel .slot.full:not(.sel){opacity:.35}
@@ -336,6 +342,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
 <main class="wrap layout view-fridge" id="layout">
   <aside class="fridge-col" id="fridgeCol" aria-label="Fridge map">
     <div class="fridge" id="fridge"></div>
+    <p class="club-key" id="clubKey" hidden><span><b>Orange</b> names are Sunshine Wine Club bottles</span></p>
     <div id="placebar"></div>
   </aside>
   <section id="listCol" aria-label="Bottles">
@@ -679,7 +686,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
           const dim = filtering() && !ids.some(id => matchesWine(wineOf(S.bottles.get(id)), S.bottles.get(id)));
           const moving = movingB && movingB.slot === s;
           const lbl = `${slotName(s)}: ${wineTitle(w, b)}`;
-          h += `<button type="button" class="slot full${isSel ? ' sel' : ''}${isSel && S.ping ? ' ping' : ''}${dim ? ' dim' : ''}${moving ? ' moving' : ''}" data-slot="${s}" style="--sw:${swatch(w.type)}" aria-label="${esc(lbl)}" aria-pressed="${isSel}"><span class="disc"></span><span class="slab">${esc(shortLabel(w))}</span>${ids.length > 1 ? `<span class="dup" title="${ids.length} bottles share this slot">${ids.length}</span>` : ''}</button>`;
+          h += `<button type="button" class="slot full${w.source === 'club' ? ' club' : ''}${isSel ? ' sel' : ''}${isSel && S.ping ? ' ping' : ''}${dim ? ' dim' : ''}${moving ? ' moving' : ''}" data-slot="${s}" style="--sw:${swatch(w.type)}" aria-label="${esc(lbl)}" aria-pressed="${isSel}"><span class="disc"></span><span class="slab">${esc(shortLabel(w))}</span>${ids.length > 1 ? `<span class="dup" title="${ids.length} bottles share this slot">${ids.length}</span>` : ''}</button>`;
         } else {
           h += `<button type="button" class="slot vacant" data-slot="${s}" aria-label="${esc(slotName(s))}: empty"><span class="disc"></span><span class="slab">${S.placing ? 'Put here' : ''}</span></button>`;
         }
@@ -691,6 +698,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     el.innerHTML = h;
     el.classList.toggle('has-sel', !!selSlot && !S.placing);
     el.classList.toggle('placing', !!S.placing);
+    $('#clubKey').hidden = !fridgeBottles().some(([, b]) => wineOf(b).source === 'club');
     S.ping = false;
 
     const pb = $('#placebar');
@@ -817,7 +825,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
         ${ratingsBlock(b.wine)}
       </div>`;
     }
-    return `<article class="item${open ? ' open' : ''}" id="b-${esc(id)}" style="--sw:${swatch(t)}">
+    return `<article class="item${open ? ' open' : ''}${w.source === 'club' ? ' club' : ''}" id="b-${esc(id)}" style="--sw:${swatch(t)}">
       <button type="button" class="item-head" data-act="toggle" data-id="${esc(id)}" aria-expanded="${open}">
         <span class="slot-tag${parseSlot(b.slot) ? '' : ' none'}">${esc(slotShort(b.slot))}</span>
         <span class="mdot"></span>
