@@ -852,7 +852,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
         ${ratingsBlock(key)}
       </div>`;
     }
-    return `<article class="item${open ? ' open' : ''}" id="w-${esc(key)}" style="--sw:${swatch(t)}">
+    return `<article class="item${open ? ' open' : ''}${w.source === 'club' ? ' club' : ''}" id="w-${esc(key)}" style="--sw:${swatch(t)}">
       <button type="button" class="item-head" data-act="ftoggle" data-key="${esc(key)}" aria-expanded="${open}">
         <span class="count" title="Finished ${fins.length} ${fins.length === 1 ? 'time' : 'times'}"><b>${fins.length}</b>×</span>
         <span class="mdot"></span>
@@ -914,7 +914,8 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
       else if(S.fsort === 'producer') rows.sort((a, b) => prod(a).localeCompare(prod(b)));
       else if(S.fsort === 'rating') rows.sort((a, b) => { const x = avgFor(a[0]), y = avgFor(b[0]); if(x == null && y == null) return lastOf(b).localeCompare(lastOf(a)); if(x == null) return 1; if(y == null) return -1; return y - x; });
       else rows.sort((a, b) => lastOf(b).localeCompare(lastOf(a)));
-      html = `<div class="items" style="margin-top:18px">${rows.map(([k, f]) => finishedItem(k, f)).join('')}</div>`;
+      const clubKey = rows.some(([k]) => (S.wines.get(k) || {}).source === 'club') ? `<p class="club-key"><span><b>Orange</b> names are Sunshine Wine Club bottles</span></p>` : '';
+      html = `${clubKey}<div class="items" style="margin-top:${clubKey ? 10 : 18}px">${rows.map(([k, f]) => finishedItem(k, f)).join('')}</div>`;
     }
     el.innerHTML = html;
     if(keep){

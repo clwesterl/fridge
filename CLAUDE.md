@@ -50,7 +50,7 @@ Chad and Nadia's two wine apps. Read this before adding bottles, changing a page
 | `serve` | serving temp / decanting / drink-by advice |
 | `short` | ≤ ~14 chars, the label on the fridge map |
 | `labelPath` | `labels/<file>.jpg` in the data repo, or `""` |
-| `source` | `research` (web), `club` (club card notes), `manual`; old cards may say `label`. `club` also marks Sunshine Wine Club bottles: their names show in orange on the Fridge tab (map labels and list) |
+| `source` | `research` (web), `club` (club card notes), `manual`; old cards may say `label`. `club` also marks Sunshine Wine Club bottles: their names show in orange on the Fridge tab (map labels and list) and in the Finished list |
 | `sources` | `[{title, url}]`, shown as links when `source` is `research` |
 | `sourceNote` | free text shown when `source` is `club` |
 | `createdAt`, `updatedAt` | ISO timestamps |
