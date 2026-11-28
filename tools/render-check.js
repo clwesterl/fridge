@@ -28,6 +28,7 @@ const MOCK_SPIRITS = {
   'auchentoshan-american-oak': sp('scotch', 'Auchentoshan', 'American Oak', {style:'Single malt', abv:'40%', region:'Lowlands', country:'Scotland', distillery:'Auchentoshan Distillery', lat:55.9226, lon:-4.4386}),
   'buffalo-trace-kentucky-straight-bourbon': sp('bourbon', 'Buffalo Trace', 'Kentucky Straight Bourbon', {style:'Straight bourbon', abv:'45%', region:'Kentucky', country:'United States', distillery:'Buffalo Trace Distillery', place:'Frankfort, Kentucky', lat:38.2133, lon:-84.8697, grain:'Corn, rye, malted barley'}),
   'redbreast-12': sp('irish', 'Redbreast', '12', {style:'Single pot still', age:'12', abv:'40%', region:'County Cork', country:'Ireland', distillery:'Midleton Distillery', lat:51.9157, lon:-8.1745}),
+  'bookers-2022-02-the-lumberyard-batch': sp('bourbon', 'Booker’s', '2022-02 “The Lumberyard Batch”', {style:'Straight bourbon', age:'7 yr 1 mo 7 days', abv:'62.4%', region:'Kentucky', country:'United States', distillery:'Jim Beam', grain:'77% corn, 13% rye, 10% malted barley'}),
   'yamazaki-12': sp('japanese', 'Yamazaki', '12', {style:'Single malt', age:'12', abv:'43%', region:'Osaka', country:'Japan', distillery:'Yamazaki Distillery', lat:34.8925, lon:135.6744}),
   'johnnie-walker-black-label': sp('scotch', 'Johnnie Walker', 'Black Label', {style:'Blended Scotch', age:'12', abv:'40%', country:'Scotland'})
 };
@@ -204,17 +205,24 @@ const server = http.createServer((req, res) => {
     await report('whiskey-desktop', errs, p);
     await ctx.close();
   }
-  // 7. whiskey phone dark: overview, add sheet with the distillery finder
+  // 7. phones, dark: Bourbon tab (no maps), then the Whiskey tab and its add sheet with the distillery finder
   {
     const {p, errs, ctx} = await newPage(400, 1500, 'dark', true);
-    await p.goto(base + 'index.html#whiskey');
+    await p.goto(base + 'index.html#bourbon');
+    await p.waitForSelector('[data-act="wtoggle"]');
+    console.log('bourbon tab: items', await p.locator('.item').count(), 'groups', await p.locator('.group-h').allInnerTexts(), 'map shown', await p.locator('#whiskeyCol').isVisible());
+    await p.screenshot({path:outDir + '/bourbon-phone-dark.png', fullPage:true});
+    await p.click('[data-act="wtoggle"][data-id="s-2026-11-20-buffalo-trace-kentucky-straight-bourbon"]');
+    await p.waitForTimeout(400);
+    console.log('bourbon card maps:', await p.locator('.item.open .cmap').count(), '| meta:', await p.locator('.item.open .it-meta').innerText(), '| abv line:', await p.locator('.item.open .place').innerText());
+    await p.locator('.item.open').screenshot({path:outDir + '/bourbon-card-phone-dark.png'});
+    await p.click('#addBtn');
+    console.log('bourbon sheet: kind', await p.inputValue('#wKind'), 'finder hidden', !(await p.locator('#wFind').isVisible()));
+    await p.click('[data-wclose] >> nth=0');
+    await p.click('#tab-whiskey');
     await p.waitForSelector('#wmap path.pin');
     await p.waitForTimeout(700);
     await p.screenshot({path:outDir + '/whiskey-phone-dark.png', fullPage:true});
-    await p.click('[data-act="wtoggle"][data-id="s-2026-11-20-buffalo-trace-kentucky-straight-bourbon"]');
-    await p.waitForSelector('.item.open .cmap .leaflet-container');
-    await p.waitForTimeout(700);
-    await p.locator('.item.open').screenshot({path:outDir + '/whiskey-card-phone-dark.png'});
     await p.click('#addBtn');
     await p.waitForSelector('#wPickMap .leaflet-container');
     await p.fill('#wProducer', 'Test Distillery'); await p.fill('#wName', '12 Year Old'); await p.fill('#wAbv', '46');

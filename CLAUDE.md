@@ -1,13 +1,13 @@
-# Wine & Sake Fridge (+ Whiskey Shelf) and Sunshine Wine Club: notes for Claude
+# Wine & Sake Fridge (+ Whiskey and Bourbon shelves) and Sunshine Wine Club: notes for Claude
 
-Chad and Nadia's two wine apps; the fridge page also has a Whiskey tab. Read this before adding bottles, changing a page, or touching the data.
+Chad and Nadia's two wine apps; the fridge page also has Whiskey and Bourbon tabs. Read this before adding bottles, changing a page, or touching the data.
 
 ## Architecture (same pattern as Movie Months and Two Spins)
 
 | | |
 |---|---|
 | App repo (public, GitHub Pages) | `clwesterl/fridge`, served at https://clwesterl.github.io/fridge/ |
-| Fridge page | `index.html`: tabs In the fridge (6 × 3 fridge map + bottle cards), Finished, and Whiskey (distillery map + whiskey cards, no slots) |
+| Fridge page | `index.html`: tabs In the fridge (6 × 3 fridge map + bottle cards), Finished, Whiskey (distillery map + whiskey cards, no slots), and Bourbon (American whiskey cards grouped by brand, no map yet). Hash routes `#fridge` `#finished` `#whiskey` `#bourbon` |
 | Club page | `club.html`, Sunshine Wine Club monthly pickups |
 | Data repo (private) | `clwesterl/fridge-data`: `fridge.json` (wine and whiskey), `club.json`, `labels/*.jpg`, `cards/*.jpg` |
 | Maps | Leaflet 1.9.4 vendored in `vendor/leaflet/` (official release zip; loaded only when the Whiskey tab or its sheet opens). Tiles: OpenStreetMap's standard tiles (`tile.openstreetmap.org`, no key; follow its tile usage policy: keep the attribution, no pre-fetching, no restrictive Referrer-Policy), muted with a CSS filter and inverted for dark mode. CARTO's basemaps were used first but have required an API key since Sept 25, 2026. Distillery search in the sheet: OpenStreetMap Nominatim, only when someone taps Find |
@@ -39,7 +39,7 @@ Chad and Nadia's two wine apps; the fridge page also has a Whiskey tab. Read thi
  "spirits": {"<spiritKey>": {…}}, "spiritBottles": {"<spiritBottleId>": {…}}, "spiritTastings": {"nadia": {"<spiritKey>": {…}}}}
 ```
 
-The three `spirit*` collections are the Whiskey tab (below). The pages add them as `{}` on their next save if missing.
+The three `spirit*` collections are the Whiskey and Bourbon tabs (below). The pages add them as `{}` on their next save if missing.
 
 `wines[<wineKey>]`: one per wine identity. Vintages of the same wine share a key.
 
@@ -77,7 +77,17 @@ The three `spirit*` collections are the Whiskey tab (below). The pages add them 
 **Finished counter**: the number of bottles with `status: "finished"` for that wineKey. It is derived, so there is no
 counter field.
 
-### Whiskey (`spirits`, `spiritBottles`, `spiritTastings` in `fridge.json`)
+### Whiskey and bourbon (`spirits`, `spiritBottles`, `spiritTastings` in `fridge.json`)
+
+Both tabs read the same collections; `kind` decides the tab (`tabOf()`): `bourbon`, `rye` and `american` go on the
+**Bourbon** tab (grouped by brand, meta line shows proof, no maps on the tab or its cards, the add sheet keeps the
+distillery name but hides the map finder), everything else on **Whiskey**. Chad asked for "no map for now" on
+Bourbon; the cards still store `distillery` and `place` so one can be added later.
+
+**Batch releases** (Booker's, Elijah Craig Barrel Proof, Lagavulin Distillers Edition…) differ in proof, age and
+notes, so each batch is its own card: put the batch in `name` (`2022-02 “The Lumberyard Batch”`, `Barrel Proof
+Batch C918`, `The Distillers Edition 2003`) and copy the label's age as free text (`7 yr 1 mo 7 days`, `11 yr 2 mo`).
+Proof is shown as ABV × 2 with one decimal (131.4), so store the label's exact ABV.
 
 Same idea as wines: one `spirits[key]` card per whiskey, one `spiritBottles[id]` per physical bottle, ratings in
 `spiritTastings[person][key]` (same shape as `tastings`). No slots. **spiritKey** = `slug(producer + " " + name)`, the
@@ -148,7 +158,8 @@ JSON formatting: one-space indent, UTF-8 unescaped (what the pages write). From 
 Same steps, with these differences:
 - No slots. New bottles are `status "in"`, `opened false`, `level 100` unless Chad says it's open (then `opened
   true`, `openedOn` today, and the level he gives).
-- Research also needs the **distillery and its coordinates**. Take them from the distillery's Wikipedia infobox or
+- Research also needs the **distillery and its coordinates** (Whiskey tab; for Bourbon-tab kinds the distillery
+  name and town are enough until it gets a map). Take them from the distillery's Wikipedia infobox or
   Wikidata (coordinate location), or the distillery's own address page; round to 4–5 decimals. Check the pin is the
   distillery, not a brand office or visitor center (Johnnie Walker Princes Street in Edinburgh distills nothing; Blanton's is made at Buffalo Trace). For a
   blend with no single home, leave `lat`/`lon` null and say so. Nominatim can't be reached from the workspace.

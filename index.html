@@ -91,6 +91,8 @@ h1 em{font-style:italic;color:var(--accent)}
 .summary b{color:var(--ink);font-weight:600}
 .tabbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:22px;border-bottom:1px solid var(--line)}
 .tabs{display:flex;gap:22px}
+.tab .cap1{text-transform:none}
+@media (max-width:520px){ .tabs{gap:16px} .tab .long{display:none} .tab .cap1{text-transform:uppercase} }
 .tab{border:0;background:none;padding:10px 0 11px;font-size:15px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;display:inline-flex;gap:8px;align-items:baseline}
 .tab .n{font:500 12px/1 var(--mono)}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
@@ -380,6 +382,7 @@ path.pin.dim{opacity:.22}
 
 /* Whiskey sheet: distillery finder */
 .distpick{border:0;margin:0;padding:0;display:grid;gap:10px;min-width:0}
+.distpick.nomap #wFind,.distpick.nomap .findres,.distpick.nomap .pickmap,.distpick.nomap .llrow{display:none}
 .distpick legend{font:500 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0;margin-bottom:8px}
 .findrow{display:flex;gap:8px}
 .findrow input{flex:1;min-width:0;font:400 16px/1.4 var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
@@ -424,9 +427,10 @@ path.pin.dim{opacity:.22}
   <p class="summary" id="summary">Loading…</p>
   <div class="tabbar" id="tabbar">
     <div class="tabs" role="tablist" aria-label="Views">
-      <button type="button" class="tab" role="tab" id="tab-fridge" data-view="fridge" aria-selected="true">In the fridge <span class="n" id="nFridge"></span></button>
+      <button type="button" class="tab" role="tab" id="tab-fridge" data-view="fridge" aria-selected="true"><span><span class="long">In the </span><span class="cap1">f</span>ridge</span> <span class="n" id="nFridge"></span></button>
       <button type="button" class="tab" role="tab" id="tab-finished" data-view="finished" aria-selected="false">Finished <span class="n" id="nFinished"></span></button>
       <button type="button" class="tab" role="tab" id="tab-whiskey" data-view="whiskey" aria-selected="false">Whiskey <span class="n" id="nWhiskey"></span></button>
+      <button type="button" class="tab" role="tab" id="tab-bourbon" data-view="bourbon" aria-selected="false">Bourbon <span class="n" id="nBourbon"></span></button>
     </div>
     <button type="button" class="btn primary addbtn" id="addBtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a bottle</button>
   </div>
@@ -557,7 +561,7 @@ path.pin.dim{opacity:.22}
         <datalist id="wStyles"><option value="Single malt"><option value="Blended malt"><option value="Blended Scotch"><option value="Single grain"><option value="Straight bourbon"><option value="Bottled-in-bond"><option value="Straight rye"><option value="Single pot still"><option value="Blended"></datalist>
         <datalist id="wRegions"><option value="Islay"><option value="Speyside"><option value="Highlands"><option value="Lowlands"><option value="Campbeltown"><option value="Islands"><option value="Kentucky"><option value="Tennessee"></datalist>
         <fieldset class="distpick">
-          <legend>Distillery on the map</legend>
+          <legend id="wDistLegend">Distillery on the map</legend>
           <div class="findrow"><input id="wDist" placeholder="Distillery name, e.g. Lagavulin Distillery" autocomplete="off" aria-label="Distillery name"><button type="button" class="btn" id="wFind">Find</button></div>
           <div class="findres" id="wFindRes"></div>
           <div class="pickmap" id="wPickMap"></div>
@@ -820,32 +824,34 @@ path.pin.dim{opacity:.22}
     const fin = finishedByWine();
     let finTotal = 0; fin.forEach(v => { finTotal += v.length; });
     const sm = $('#summary');
-    const wv = S.view === 'whiskey';
-    const shelf = shelfBottles();
-    $('#title').innerHTML = wv ? 'Whiskey <em>Shelf</em>' : 'Wine &amp; Sake <em>Fridge</em>';
+    const wv = spiritView(), bv = S.view === 'bourbon';
+    const shelf = wv ? shelfIn(S.view) : [];
+    $('#title').innerHTML = S.view === 'whiskey' ? 'Whiskey <em>Shelf</em>' : bv ? 'Bourbon <em>Shelf</em>' : 'Wine &amp; Sake <em>Fridge</em>';
     if(S.phase === 'loading') sm.textContent = 'Loading…';
     else if(!ready) sm.textContent = 'What’s in the fridge, where it sits, and what we’ve finished.';
     else if(wv){
       const open = shelf.filter(([, b]) => b.opened).length;
       const dist = new Set(shelf.map(([, b]) => llOf(spiritOf(b))).filter(Boolean).map(ll => ll.join(','))).size;
-      let wfin = 0; finishedBySpirit().forEach(v => { wfin += v.length; });
-      sm.innerHTML = `<b>${shelf.length}</b> ${shelf.length === 1 ? 'bottle' : 'bottles'} on the shelf` + (shelf.length ? ` · <b>${open}</b> open · <b>${dist}</b> ${dist === 1 ? 'distillery' : 'distilleries'} on the map` : '') + ` · <b>${wfin}</b> finished`;
+      let wfin = 0; finishedIn(S.view).forEach(v => { wfin += v.length; });
+      const brands = new Set(shelf.map(([, b]) => fold(spiritOf(b).producer))).size;
+      sm.innerHTML = `<b>${shelf.length}</b> ${shelf.length === 1 ? 'bottle' : 'bottles'} on the shelf` + (shelf.length ? ` · <b>${open}</b> open · ` + (bv ? `<b>${brands}</b> ${brands === 1 ? 'brand' : 'brands'}` : `<b>${dist}</b> ${dist === 1 ? 'distillery' : 'distilleries'} on the map`) : '') + ` · <b>${wfin}</b> finished`;
     }
     else sm.innerHTML = `<b>${fb.length}</b> ${fb.length === 1 ? 'bottle' : 'bottles'} in the fridge · <b>${filled}</b> of 18 slots filled` + (loose ? ` · <b>${loose}</b> not in a slot` : '') + ` · <b>${finTotal}</b> finished`;
     $('#nFridge').textContent = ready ? fb.length : '';
     $('#nFinished').textContent = ready ? fin.size : '';
-    $('#nWhiskey').textContent = ready && S.sbottles.size ? shelf.length : '';
+    $('#nWhiskey').textContent = ready && tabHas('whiskey') ? shelfIn('whiskey').length : '';
+    $('#nBourbon').textContent = ready && tabHas('bourbon') ? shelfIn('bourbon').length : '';
     document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === S.view)));
     $('#tabbar').hidden = !ready;
-    $('#toolbar').hidden = !ready || (wv && !S.sbottles.size);
+    $('#toolbar').hidden = !ready || (wv && !tabHas(S.view));
     $('#addBtn').hidden = !canEdit();
     const lay = $('#layout');
-    lay.classList.toggle('single', S.view === 'finished' || !ready);
+    lay.classList.toggle('single', S.view === 'finished' || bv || !ready);
     lay.classList.toggle('view-fridge', S.view === 'fridge');
-    lay.classList.toggle('view-whiskey', wv);
+    lay.classList.toggle('view-whiskey', S.view === 'whiskey');
     $('#fridgeCol').hidden = S.view !== 'fridge' || !ready;
-    $('#whiskeyCol').hidden = !wv || !ready;
-    $('#q').placeholder = wv ? 'Search whiskey or distilleries' : 'Search bottles, grapes, places or foods';
+    $('#whiskeyCol').hidden = S.view !== 'whiskey' || !ready;
+    $('#q').placeholder = bv ? 'Search bourbon, batches or notes' : wv ? 'Search whiskey or distilleries' : 'Search bottles, grapes, places or foods';
     $('#fsortWrap').hidden = !(S.view === 'finished' || (wv && S.wv === 'finished'));
     $('#fsort').value = S.fsort;
     $('#refreshBtn').classList.toggle('spin', S.phase === 'loading' || S.pending.length > 0);
@@ -893,7 +899,7 @@ path.pin.dim{opacity:.22}
   }
 
   function renderChips(){
-    if(S.phase !== 'ready' || S.view === 'whiskey'){ $('#typeChips').innerHTML = ''; $('#countryWrap').hidden = true; return; }
+    if(S.phase !== 'ready' || spiritView()){ $('#typeChips').innerHTML = ''; $('#countryWrap').hidden = true; return; }
     const src = S.view === 'fridge'
       ? fridgeBottles().map(([, b]) => wineOf(b))
       : [...finishedByWine().keys()].map(k => S.wines.get(k) || {});
@@ -1065,7 +1071,7 @@ path.pin.dim{opacity:.22}
     }
 
     let html = '';
-    if(S.view === 'whiskey'){
+    if(spiritView()){
       html = whiskeyList();
     } else if(S.view === 'fridge'){
       const all = fridgeBottles();
@@ -1124,6 +1130,12 @@ path.pin.dim{opacity:.22}
   const distName = sp => String(sp.distillery || sp.producer || sp.name || '').replace(/\s+distillery$/i, '').replace(/^the\s+/i, '').trim() || '?';
   function spiritOf(b){ return (b && S.spirits.get(b.spirit)) || {}; }
   function shelfBottles(){ return [...S.sbottles.entries()].filter(([, b]) => b.status !== 'finished'); }
+  // American whiskey (bourbon, rye, other US) lives on the Bourbon tab; everything else on Whiskey.
+  const tabOf = sp => AMERICAN.has(kindOf(sp)) ? 'bourbon' : 'whiskey';
+  const spiritView = () => S.view === 'whiskey' || S.view === 'bourbon';
+  const shelfIn = tab => shelfBottles().filter(([, b]) => tabOf(spiritOf(b)) === tab);
+  function finishedIn(tab){ const m = finishedBySpirit(); [...m.keys()].forEach(k => { if(tabOf(S.spirits.get(k) || {}) !== tab) m.delete(k); }); return m; }
+  const tabHas = tab => [...S.sbottles.values()].some(b => tabOf(spiritOf(b)) === tab);
   function finishedBySpirit(){
     const m = new Map();
     S.sbottles.forEach((b, id) => { if(b.status === 'finished'){ if(!m.has(b.spirit)) m.set(b.spirit, []); m.get(b.spirit).push([id, b]); } });
@@ -1145,9 +1157,11 @@ path.pin.dim{opacity:.22}
     const a = String(sp.abv || '').trim();
     if(!a) return '';
     const n = parseFloat(a);
-    const proof = AMERICAN.has(sp.kind) && Number.isFinite(n) && !/proof/i.test(a) ? ` · ${Math.round(n * 2)} proof` : '';
+    const proof = AMERICAN.has(sp.kind) && Number.isFinite(n) && !/proof/i.test(a) ? ` · ${proofOf(sp)}` : '';
     return a + (/%/.test(a) ? ' ABV' : '') + proof;
   }
+  // US proof is twice the ABV; keep the decimal (barrel-proof batches are known by it: 131.4, not 131)
+  function proofOf(sp){ const n = parseFloat(sp.abv); return Number.isFinite(n) ? `${Math.round(n * 20) / 10} proof` : ''; }
   const grainLabel = k => AMERICAN.has(k) ? 'Mash bill' : 'Grain';
   const LEVELS = [[100, 'Full'], [75, '¾'], [50, '½'], [25, '¼'], [10, 'Last pour']];
   function levelOf(b){ const n = +b.level; return Number.isFinite(n) && n > 0 ? Math.min(100, n) : 100; }
@@ -1181,8 +1195,8 @@ path.pin.dim{opacity:.22}
   const wfiltering = () => S.wkind !== 'all' || S.wregion !== 'all' || !!S.q.trim();
   // What the whiskey tab is showing: bottles on the shelf, or one row per whiskey we've finished.
   function wItems(){
-    if(S.wv === 'finished') return [...finishedBySpirit().entries()].map(([key, fins]) => ({id:fins[0][0], b:fins[0][1], key, sp:S.spirits.get(key) || {}, fins}));
-    return shelfBottles().map(([id, b]) => ({id, b, key:b.spirit, sp:spiritOf(b)}));
+    if(S.wv === 'finished') return [...finishedIn(S.view).entries()].map(([key, fins]) => ({id:fins[0][0], b:fins[0][1], key, sp:S.spirits.get(key) || {}, fins}));
+    return shelfIn(S.view).map(([id, b]) => ({id, b, key:b.spirit, sp:spiritOf(b)}));
   }
   const isSelItem = x => S.wv === 'shelf' ? x.id === S.wsel : x.key === S.wfsel;
 
@@ -1284,7 +1298,7 @@ path.pin.dim{opacity:.22}
       if(fitLL.length) m.fitBounds(L.latLngBounds(fitLL), {paddingTopLeft:[34, 34], paddingBottomRight:[96, 34], maxZoom:8, animate:!first && !reduced});
     } else if(selLL && !m.getBounds().pad(-0.08).contains(selLL)) m.panTo(selLL, {animate:!reduced});
     requestAnimationFrame(declutter);
-    const none = !S.sbottles.size ? 'Distillery pins show up here as bottles are added.'
+    const none = !tabHas('whiskey') ? 'Distillery pins show up here as bottles are added.'
       : !items.length ? '' : !pins.size ? 'None of these bottles has a distillery pin yet.' : '';
     showMsg(none);
   }
@@ -1333,11 +1347,12 @@ path.pin.dim{opacity:.22}
 
   /* ================= whiskey: render ================= */
   function renderWControls(){
-    const on = S.view === 'whiskey' && S.phase === 'ready';
-    $('#wSub').hidden = !on || !S.sbottles.size;
+    const on = spiritView() && S.phase === 'ready';
+    $('#wSub').hidden = !on || !tabHas(S.view);
     $('#wKinds').hidden = !on;
-    if(!on){ $('#wLegend').innerHTML = ''; $('#wmapFoot').textContent = ''; return; }
-    const nShelf = shelfBottles().length, nFin = finishedBySpirit().size;
+    if(!on || S.view !== 'whiskey'){ $('#wLegend').innerHTML = ''; $('#wmapFoot').textContent = ''; }
+    if(!on) return;
+    const nShelf = shelfIn(S.view).length, nFin = finishedIn(S.view).size;
     $('#wSub').innerHTML = [['shelf', 'On the shelf', nShelf], ['finished', 'Finished', nFin]].map(([v, l, n]) => `<button type="button" data-wsub="${v}" aria-pressed="${S.wv === v}">${l} <span class="n">${n}</span></button>`).join('');
     const items = wItems();
     const kc = {};
@@ -1347,6 +1362,7 @@ path.pin.dim{opacity:.22}
     $('#wKinds').innerHTML = kinds.length < 2 && S.wkind === 'all' ? '' :
       [`<button type="button" class="chip" data-wkind="all" aria-pressed="${S.wkind === 'all'}">All</button>`]
       .concat(kinds.map(k => `<button type="button" class="chip" data-wkind="${k}" aria-pressed="${S.wkind === k}">${esc(kindLabel(k))}<span class="n">${kc[k]}</span></button>`)).join('');
+    if(S.view !== 'whiskey') return;
     // The legend is also the region filter. Its counts follow the kind and search filters, not the region one.
     const all = {}, rc = {};
     items.forEach(x => { const g = regionGroup(x.sp); all[g] = 1; if(matchesSpirit(x.sp, x.b, true)) rc[g] = (rc[g] || 0) + 1; });
@@ -1393,12 +1409,13 @@ path.pin.dim{opacity:.22}
     const where = [place.join(''), rc.join(', ')].filter(Boolean).join(' · ');
     const state = b ? [levelText(b), b.addedOn ? 'added ' + fmtDate(b.addedOn) : ''].filter(Boolean).join(' · ') : '';
     const maps = ll ? `<a class="btn" href="https://www.google.com/maps/search/?api=1&amp;query=${ll[0]},${ll[1]}" target="_blank" rel="noopener">Open in Maps<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>` : '';
+    const showMap = S.view === 'whiskey';
     return `<div class="wloc">
-      ${ll ? `<div class="cmap" data-cmap="${esc(holder)}" data-lat="${ll[0]}" data-lon="${ll[1]}" data-rg="${g}" role="img" aria-label="Map showing ${esc(distName(sp))}"></div>` : ''}
+      ${ll && showMap ? `<div class="cmap" data-cmap="${esc(holder)}" data-lat="${ll[0]}" data-lon="${ll[1]}" data-rg="${g}" role="img" aria-label="Map showing ${esc(distName(sp))}"></div>` : ''}
       <div class="wloc-text"><div>
         <p class="loc">${hl(sp.distillery || sp.producer || 'Distillery')}</p>
         ${where ? `<p class="loc-sub">${hl(where)}</p>` : ''}
-        ${!ll ? `<p class="loc-sub">No pin on the map yet${canEdit() ? '. Edit to find the distillery.' : '.'}</p>` : ''}
+        ${!ll && showMap ? `<p class="loc-sub">No pin on the map yet${canEdit() ? '. Edit to find the distillery.' : '.'}</p>` : ''}
         ${state ? `<p class="loc-sub">${esc(state)}</p>` : ''}
         ${b && boughtText(b) ? `<p class="loc-sub">${hl(boughtText(b))}</p>` : ''}
       </div>${maps}</div>
@@ -1409,7 +1426,10 @@ path.pin.dim{opacity:.22}
     const opts = [['sealed', 'Sealed']].concat(LEVELS.map(([v, l]) => [String(v), l]));
     return `<div class="levelpick"><span class="sec-h"><span>How full?</span></span><div class="seg" role="group" aria-label="How full">${opts.map(([v, l]) => `<button type="button" data-act="wlevel" data-id="${esc(id)}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div></div>`;
   }
-  function itemMeta(sp){ return [sp.region || sp.country, sp.style || kindLabel(kindOf(sp)), ageText(sp), sp.abv].filter(Boolean).join(' · '); }
+  function itemMeta(sp){
+    if(AMERICAN.has(kindOf(sp))) return [sp.style || kindLabel(kindOf(sp)), ageText(sp), proofOf(sp) || sp.abv].filter(Boolean).join(' · ');
+    return [sp.region || sp.country, sp.style || kindLabel(kindOf(sp)), ageText(sp), sp.abv].filter(Boolean).join(' · ');
+  }
   function whiskeyItem(id, b){
     const sp = spiritOf(b), open = S.wsel === id, g = regionGroup(sp);
     let body = '';
@@ -1463,7 +1483,11 @@ path.pin.dim{opacity:.22}
     </article>`;
   }
   function whiskeyList(){
-    if(!S.sbottles.size){
+    if(S.view === 'bourbon' && !tabHas('bourbon')){
+      return `<div class="emptystate"><h2>No bourbon yet</h2>
+        <p>Send Claude a photo of the label and it will look the bottle up${canEdit() ? `, or <button type="button" class="linkbtn" data-act="wadd">add one yourself</button>` : ''}. Rye and other American whiskey go here too.</p></div>`;
+    }
+    if(!tabHas('whiskey')){
       return `<div class="emptystate"><h2>No whiskey yet</h2>
         <p>Send Claude a photo of the label and it will look the bottle up, find the distillery and pin it on the map${canEdit() ? `, or <button type="button" class="linkbtn" data-act="wadd">add one yourself</button>` : ''}.</p>
         <p>Scotch, bourbon, rye, Irish, Japanese: each bottle gets a card like the wines do, plus its distillery on the map and a gauge for how much is left.</p></div>`;
@@ -1478,6 +1502,15 @@ path.pin.dim{opacity:.22}
     if(!shown.length) return noMatch();
     const rgOrder = Object.keys(RG);
     const prod = x => fold(x.sp.producer || x.sp.name || '');
+    if(S.wv === 'shelf' && S.view === 'bourbon'){
+      // one group per brand, batches in name order
+      const groups = new Map();
+      shown.sort((a, b) => prod(a).localeCompare(prod(b)) || String(a.sp.name || '').localeCompare(String(b.sp.name || ''), undefined, {numeric:true}));
+      shown.forEach(x => { const k = x.sp.producer || x.sp.name || 'Other'; if(!groups.has(k)) groups.set(k, []); groups.get(k).push(x); });
+      let html = '';
+      groups.forEach((g, k) => { html += `<section class="group"><h3 class="group-h">${esc(k)} · ${g.length}</h3><div class="items">${g.map(x => whiskeyItem(x.id, x.b)).join('')}</div></section>`; });
+      return html;
+    }
     if(S.wv === 'shelf'){
       const groups = new Map();
       shown.sort((a, b) => rgOrder.indexOf(regionGroup(a.sp)) - rgOrder.indexOf(regionGroup(b.sp)) || prod(a).localeCompare(prod(b)));
@@ -1798,7 +1831,7 @@ path.pin.dim{opacity:.22}
     wFill(merged);
     if(!WF.labelPath){ WF.labelPath = sp.labelPath || ''; if(!WF.photoBlob) wSetPhoto(null); }
     wShowMatch(key);
-    if(MAP.pick){ wPlaceMarker(); if(WF.lat != null) MAP.pick.m.setView([WF.lat, WF.lon], 10); }
+    if(MAP.pick && !WF.noMap){ wPlaceMarker(); if(WF.lat != null) MAP.pick.m.setView([WF.lat, WF.lon], 10); }
     wLLText();
   }
   function wRead(){
@@ -1815,7 +1848,8 @@ path.pin.dim{opacity:.22}
     opts = opts || {};
     WF.mode = mode; WF.bottleId = opts.bottleId || null; WF.key = opts.key || null; WF.labelPath = ''; WF.found = null;
     const b = WF.bottleId ? S.sbottles.get(WF.bottleId) : null;
-    const sp = WF.key ? (S.spirits.get(WF.key) || {}) : {kind:'scotch', country:'Scotland'};
+    const sp = WF.key ? (S.spirits.get(WF.key) || {}) : S.view === 'bourbon' ? {kind:'bourbon', country:'United States', region:'Kentucky'} : {kind:'scotch', country:'Scotland'};
+    WF.noMap = S.view === 'bourbon';   // no maps on the Bourbon tab (for now): keep the distillery's name, skip the finder
     if(WF.key) WF.labelPath = sp.labelPath || '';
     wFill(sp);
     fld('wBoughtOn').value = mode === 'edit' && b ? (b.purchasedOn || '') : '';
@@ -1831,7 +1865,9 @@ path.pin.dim{opacity:.22}
     fld('wEditNote').hidden = mode !== 'edit';
     fld('wsheet').hidden = false;
     fld('wsheet').querySelector('.sheet-body').scrollTop = 0;
-    wPickMap();
+    fld('wsheet').querySelector('.distpick').classList.toggle('nomap', WF.noMap);
+    fld('wDistLegend').textContent = WF.noMap ? 'Distillery' : 'Distillery on the map';
+    if(!WF.noMap) wPickMap();
     setTimeout(() => { fld('wProducer').focus(); }, 30);
   }
   function closeWSheet(){ fld('wsheet').hidden = true; wSetPhoto(null); }
@@ -1870,7 +1906,7 @@ path.pin.dim{opacity:.22}
           doc.spiritBottles[id] = {spirit:key, status:'in', opened, openedOn:opened ? today() : '', level:opened ? +WF.level : 100, addedOn:today(), finishedOn:'', purchasedOn:v.purchasedOn, purchasedFrom:v.purchasedFrom};
         }).then(ok => { if(ok) toast('Added to the shelf'); });
         closeWSheet();
-        S.view = 'whiskey'; S.wv = 'shelf'; setHash(); S.wsel = id; S.q = ''; S.wkind = 'all'; S.wregion = 'all'; fld('q').value = '';
+        S.view = tabOf(v); S.wv = 'shelf'; setHash(); S.wsel = id; S.q = ''; S.wkind = 'all'; S.wregion = 'all'; fld('q').value = '';
         scheduleRender();
         setTimeout(() => { const el = document.getElementById('wb-' + id); if(el) el.scrollIntoView({behavior:reduced ? 'auto' : 'smooth', block:'nearest'}); }, 60);
       }
@@ -2064,14 +2100,14 @@ path.pin.dim{opacity:.22}
 
   /* ================= events ================= */
   function setHash(){ try{ const h = '#' + S.view; if(location.hash !== h) history.replaceState(null, '', h); }catch(e){} }
-  function readHash(){ const h = (location.hash || '').slice(1); if(h === 'finished' || h === 'fridge' || h === 'whiskey') S.view = h; }
+  function readHash(){ const h = (location.hash || '').slice(1); if(['finished', 'fridge', 'whiskey', 'bourbon'].includes(h)) S.view = h; }
   window.addEventListener('hashchange', () => { readHash(); S.type = 'all'; renderAll(); });
 
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
     if(S.view === t.dataset.view) return;
-    S.view = t.dataset.view; S.type = 'all'; S.placing = null; S.confirmRemove = null; setHash(); renderAll();
+    S.view = t.dataset.view; S.type = 'all'; S.wkind = 'all'; S.wregion = 'all'; S.placing = null; S.confirmRemove = null; setHash(); renderAll();
   }));
-  $('#addBtn').addEventListener('click', () => { if(S.view === 'whiskey') openWSheet('add'); else openSheet('add'); });
+  $('#addBtn').addEventListener('click', () => { if(spiritView()) openWSheet('add'); else openSheet('add'); });
   $('#refreshBtn').addEventListener('click', () => { if(S.phase === 'ready'){ if(MAP.failed) loadLeaflet().then(scheduleRender, () => {}); refresh(false); } else start(); });
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#q').addEventListener('input', e => { S.q = e.target.value; renderAll(); });
