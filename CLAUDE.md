@@ -10,7 +10,7 @@ Chad and Nadia's two wine apps; the fridge page also has a Whiskey tab. Read thi
 | Fridge page | `index.html`: tabs In the fridge (6 × 3 fridge map + bottle cards), Finished, and Whiskey (distillery map + whiskey cards, no slots) |
 | Club page | `club.html`, Sunshine Wine Club monthly pickups |
 | Data repo (private) | `clwesterl/fridge-data`: `fridge.json` (wine and whiskey), `club.json`, `labels/*.jpg`, `cards/*.jpg` |
-| Maps | Leaflet 1.9.4 vendored in `vendor/leaflet/` (official release zip; loaded only when the Whiskey tab or its sheet opens). Tiles: CARTO `light_all` / `dark_all` (OpenStreetMap data), attribution shown on every map. Distillery search in the sheet: OpenStreetMap Nominatim, only when someone taps Find |
+| Maps | Leaflet 1.9.4 vendored in `vendor/leaflet/` (official release zip; loaded only when the Whiskey tab or its sheet opens). Tiles: OpenStreetMap's standard tiles (`tile.openstreetmap.org`, no key; follow its tile usage policy: keep the attribution, no pre-fetching, no restrictive Referrer-Policy), muted with a CSS filter and inverted for dark mode. CARTO's basemaps were used first but have required an API key since Sept 25, 2026. Distillery search in the sheet: OpenStreetMap Nominatim, only when someone taps Find |
 
 - Single-file HTML/CSS/JS, no build step. Both pages read and write the data repo through the **GitHub Contents
   API** with a **fine-grained token** (Contents: read and write on `fridge-data`).
@@ -173,8 +173,8 @@ those bottles also go in the fridge, add them to `fridge.json` too.
 - Checker: `node tools/render-check.js . <path to a fridge-data checkout> <outdir>`. It serves the pages
   on localhost, answers api.github.com from the data checkout (writes stay in memory), clicks through
   open/rate/finish/add and the club status toggle, and saves light/dark, desktop/phone screenshots. Read the PNGs.
-  For the Whiskey tab it injects a dozen test whiskies in memory (real data untouched), serves blank map tiles from
-  `tools/tile-*.png` and a fake Nominatim answer, and exercises the region filter, pin taps, level, rating,
+  For the Whiskey tab it injects a dozen test whiskies in memory (real data untouched), serves a blank map tile from
+  `tools/tile.png` and a fake Nominatim answer, and exercises the region filter, pin taps, level, rating,
   finish, and the add sheet's distillery finder.
 - Keep the two pages' GitHub layer in sync (`ghGetJSON`, `ghPut`, `commit`/`drain`, the localStorage keys).
 - Lessons already learned: a generic class like `empty` collided with `.slot.empty` and stretched the map (slots

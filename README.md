@@ -11,5 +11,5 @@ Two small web apps for Chad and Nadia, hosted on GitHub Pages:
 The data lives in a private repo and is read and written with a GitHub access token saved in each browser.
 See [CLAUDE.md](CLAUDE.md) for how it all works.
 
-Maps use [Leaflet](https://leafletjs.com) 1.9.4 (BSD-2, vendored in `vendor/leaflet/`) with CARTO basemaps of
-OpenStreetMap data.
+Maps use [Leaflet](https://leafletjs.com) 1.9.4 (BSD-2, vendored in `vendor/leaflet/`) with OpenStreetMap tiles
+(© OpenStreetMap contributors).

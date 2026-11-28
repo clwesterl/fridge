@@ -41,7 +41,7 @@ function injectWhiskey(){
   d.spirits = MOCK_SPIRITS; d.spiritBottles = MOCK_BOTTLES; d.spiritTastings = {nadia:{'lagavulin-16-year-old':{stars:4, note:'Test note', updatedAt:'2026-11-26T03:00:00Z'}}};
   mem.set('fridge.json', Buffer.from(JSON.stringify(d, null, 1)));
 }
-const TILE = {light:fs.readFileSync(path.join(__dirname, 'tile-light.png')), dark:fs.readFileSync(path.join(__dirname, 'tile-dark.png'))};
+const TILE = fs.readFileSync(path.join(__dirname, 'tile.png'));   // stands in for OpenStreetMap tiles
 const NOMINATIM = [{lat:'55.6400', lon:'-6.1100', name:'Test Distillery', display_name:'Test Distillery, Port Ellen, Argyll and Bute, Scotland, United Kingdom', address:{village:'Port Ellen', county:'Argyll and Bute', country:'United Kingdom'}}];
 const TYPES = {'.html':'text/html', '.png':'image/png', '.js':'application/javascript', '.css':'text/css'};
 
@@ -60,7 +60,7 @@ const server = http.createServer((req, res) => {
     p.on('pageerror', e => errs.push(e.message));
     p.on('console', m => { if(m.type() === 'error' && !/fonts|ERR_TUNNEL|ERR_NAME|ERR_CONNECTION|Failed to load resource/.test(m.text())) errs.push(m.text()); });
     await p.route('https://fonts.googleapis.com/**', r => r.fulfill({status:200, contentType:'text/css', body:''}));
-    await p.route(/basemaps\.cartocdn\.com/, r => r.fulfill({status:200, contentType:'image/png', body:/dark_all/.test(r.request().url()) ? TILE.dark : TILE.light}));
+    await p.route('https://tile.openstreetmap.org/**', r => r.fulfill({status:200, contentType:'image/png', body:TILE}));
     await p.route('https://nominatim.openstreetmap.org/**', r => r.fulfill({status:200, contentType:'application/json', headers:{'Access-Control-Allow-Origin':'*'}, body:JSON.stringify(NOMINATIM)}));
     await p.route('https://api.github.com/**', async route => {
       const req = route.request();

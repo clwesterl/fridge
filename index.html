@@ -330,6 +330,9 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
 
 /* Leaflet, restyled to the app (the stylesheet is loaded before this one, so equal selectors here win) */
 .leaflet-container{background:var(--sunk);font:400 12px/1.4 var(--body)}
+/* OpenStreetMap's tiles are colorful; mute them so the region pins carry the color, and invert them for dark mode */
+.leaflet-tile-pane{filter:grayscale(.6) contrast(.92) brightness(1.03)}
+@media (prefers-color-scheme: dark){ .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) grayscale(.55) brightness(.82) contrast(.92)} .leaflet-container{background:#1b1719} }
 .leaflet-bar{border:1px solid var(--line)!important;box-shadow:none!important;border-radius:9px!important;overflow:hidden}
 .leaflet-bar a,.leaflet-bar a:hover{background:var(--surface);color:var(--ink);border-bottom-color:var(--line);width:30px;height:30px;line-height:30px}
 .leaflet-bar a.leaflet-disabled{background:var(--sunk);color:var(--muted)}
@@ -1186,9 +1189,10 @@ path.pin.dim{opacity:.22}
   /* ================= whiskey: maps (Leaflet, vendored; CARTO tiles from OpenStreetMap data) ================= */
   const MAP = {loading:null, failed:false, overview:null, layer:null, fitKey:null, cards:new Map(), pick:null};
   const coarse = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-  const darkMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
-  const tileUrl = () => `https://{s}.basemaps.cartocdn.com/${darkMQ && darkMQ.matches ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`;
-  const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
+  // OpenStreetMap's own tiles: no key, fine for a two-person site under its usage policy (attribution shown, the
+  // browser's normal Referer, no pre-fetching). Dark mode and the muted look are a CSS filter on the tile pane.
+  const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
   // One finger scrolls the page on phones; pinch (two fingers) moves and zooms the map. The wheel never zooms.
   const mapOpts = extra => Object.assign({scrollWheelZoom:false, dragging:!coarse, touchZoom:true, boxZoom:false, minZoom:2, maxZoom:17, worldCopyJump:true}, extra || {});
   function loadLeaflet(){
@@ -1205,11 +1209,9 @@ path.pin.dim{opacity:.22}
     return MAP.loading;
   }
   function addTiles(m){
-    m._tiles = L.tileLayer(tileUrl(), {subdomains:'abcd', maxZoom:19, attribution:TILE_ATTR}).addTo(m);
+    m._tiles = L.tileLayer(TILE_URL, {maxZoom:19, attribution:TILE_ATTR}).addTo(m);
     if(m.attributionControl) m.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
   }
-  const allMaps = () => [MAP.overview, MAP.pick && MAP.pick.m].concat([...MAP.cards.values()].map(e => e.m)).filter(Boolean);
-  if(darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { allMaps().forEach(m => { if(m._tiles) m._tiles.setUrl(tileUrl()); }); });
   const wrapLon = x => ((x + 540) % 360) - 180;
   const round5 = x => Math.round(x * 1e5) / 1e5;
 
