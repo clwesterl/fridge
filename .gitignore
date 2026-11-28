@@ -2,3 +2,5 @@ node_modules/
 .DS_Store
 *.png
 !apple-touch-icon.png
+!tools/tile-light.png
+!tools/tile-dark.png

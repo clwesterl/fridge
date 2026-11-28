@@ -1,15 +1,16 @@
-# Wine & Sake Fridge + Sunshine Wine Club: notes for Claude
+# Wine & Sake Fridge (+ Whiskey Shelf) and Sunshine Wine Club: notes for Claude
 
-Chad and Nadia's two wine apps. Read this before adding bottles, changing a page, or touching the data.
+Chad and Nadia's two wine apps; the fridge page also has a Whiskey tab. Read this before adding bottles, changing a page, or touching the data.
 
 ## Architecture (same pattern as Movie Months and Two Spins)
 
 | | |
 |---|---|
 | App repo (public, GitHub Pages) | `clwesterl/fridge`, served at https://clwesterl.github.io/fridge/ |
-| Fridge page | `index.html`, the 6 × 3 fridge map, bottle cards, Finished list |
+| Fridge page | `index.html`: tabs In the fridge (6 × 3 fridge map + bottle cards), Finished, and Whiskey (distillery map + whiskey cards, no slots) |
 | Club page | `club.html`, Sunshine Wine Club monthly pickups |
-| Data repo (private) | `clwesterl/fridge-data`: `fridge.json`, `club.json`, `labels/*.jpg`, `cards/*.jpg` |
+| Data repo (private) | `clwesterl/fridge-data`: `fridge.json` (wine and whiskey), `club.json`, `labels/*.jpg`, `cards/*.jpg` |
+| Maps | Leaflet 1.9.4 vendored in `vendor/leaflet/` (official release zip; loaded only when the Whiskey tab or its sheet opens). Tiles: CARTO `light_all` / `dark_all` (OpenStreetMap data), attribution shown on every map. Distillery search in the sheet: OpenStreetMap Nominatim, only when someone taps Find |
 
 - Single-file HTML/CSS/JS, no build step. Both pages read and write the data repo through the **GitHub Contents
   API** with a **fine-grained token** (Contents: read and write on `fridge-data`).
@@ -34,8 +35,11 @@ Chad and Nadia's two wine apps. Read this before adding bottles, changing a page
 ### `fridge.json`
 
 ```json
-{"version": 1, "wines": {"<wineKey>": {…}}, "bottles": {"<bottleId>": {…}}, "tastings": {"chad": {"<wineKey>": {"stars": 4, "note": "", "updatedAt": "ISO"}}}}
+{"version": 1, "wines": {"<wineKey>": {…}}, "bottles": {"<bottleId>": {…}}, "tastings": {"chad": {"<wineKey>": {"stars": 4, "note": "", "updatedAt": "ISO"}}},
+ "spirits": {"<spiritKey>": {…}}, "spiritBottles": {"<spiritBottleId>": {…}}, "spiritTastings": {"nadia": {"<spiritKey>": {…}}}}
 ```
+
+The three `spirit*` collections are the Whiskey tab (below). The pages add them as `{}` on their next save if missing.
 
 `wines[<wineKey>]`: one per wine identity. Vintages of the same wine share a key.
 
@@ -73,6 +77,38 @@ Chad and Nadia's two wine apps. Read this before adding bottles, changing a page
 **Finished counter**: the number of bottles with `status: "finished"` for that wineKey. It is derived, so there is no
 counter field.
 
+### Whiskey (`spirits`, `spiritBottles`, `spiritTastings` in `fridge.json`)
+
+Same idea as wines: one `spirits[key]` card per whiskey, one `spiritBottles[id]` per physical bottle, ratings in
+`spiritTastings[person][key]` (same shape as `tastings`). No slots. **spiritKey** = `slug(producer + " " + name)`, the
+same `wineKeyFor()` slug. Bottle id `s-YYYY-MM-DD-<short-slug>-<4 random>`.
+
+`spirits[<spiritKey>]`:
+
+| field | notes |
+|---|---|
+| `kind` | `scotch` `bourbon` `rye` `american` (other US) `irish` `japanese` `canadian` `world` (other whisky) `other` (not whiskey) |
+| `producer`, `name` | brand as on the label ("Lagavulin", "Blanton's") and expression ("16 Year Old", "Single Barrel") |
+| `style` | "Single malt", "Blended Scotch", "Straight bourbon", "Bottled-in-bond", "Single pot still"… |
+| `age` | string: `"16"` shows as "16 yr"; free text otherwise ("NAS") |
+| `abv` | `"43%"`. American kinds also show proof (ABV × 2) unless the string already says proof |
+| `region`, `country` | Scotch `region` must be one of **Islay, Speyside, Highlands, Lowlands, Campbeltown, Islands** (Islands may add the island: "Islands (Skye)"); it picks the map color and the region filter. Others: state/county ("Kentucky", "County Cork"). `country` "Scotland", "United States", "Ireland", "Japan"… |
+| `distillery` | where it's made, which is where the pin goes ("Buffalo Trace Distillery" for Blanton's). Blank for a blend with no single home |
+| `place` | town or area of the distillery, without the region ("Port Ellen, Isle of Islay", "Frankfort") |
+| `lat`, `lon` | numbers (5 decimals is plenty), or `null` = no pin |
+| `cask`, `grain` | cask/finish text; grain or mash bill ("75% corn, 13% rye, 12% malted barley") |
+| `nose`, `palate`, `finish`, `facts` | arrays of short phrases; facts ≤ 3 |
+| `serve` | "Neat, a few drops of water" etc. |
+| `labelPath`, `source`, `sources`, `sourceNote`, `createdAt`, `updatedAt` | as for wines |
+
+`spiritBottles[<id>]`: `{spirit, status: "in"|"finished", opened, openedOn, level, addedOn, finishedOn, purchasedOn, purchasedFrom}`.
+`level` is how full an opened bottle is: `100` `75` `50` `25` `10` (Full, ¾, ½, ¼, Last pour). `opened: false` = sealed
+(`level` 100). Finishing keeps `level`; "Put back" sets `status` back to `in`.
+
+Map colors come from `regionGroup()` in `index.html`: the six Scotch regions, then Ireland, United States, Japan, and
+gray for Scotland-region-unknown and everywhere else. Seven neighbors can't all be told apart by color, so every pin
+is labeled with its distillery and the legend chips filter (tap Islay → only Islay, zoomed in).
+
 ### `club.json`
 
 ```json
@@ -107,6 +143,20 @@ JSON formatting: one-space indent, UTF-8 unescaped (what the pages write). From 
 8. Reply with one bullet per bottle (slot + a 1–2 sentence summary), slots filled out of 18, and a "Sources:"
    list.
 
+### Whiskey bottles
+
+Same steps, with these differences:
+- No slots. New bottles are `status "in"`, `opened false`, `level 100` unless Chad says it's open (then `opened
+  true`, `openedOn` today, and the level he gives).
+- Research also needs the **distillery and its coordinates**. Take them from the distillery's Wikipedia infobox or
+  Wikidata (coordinate location), or the distillery's own address page; round to 4–5 decimals. Check the pin is the
+  distillery, not a brand office or visitor center (Johnnie Walker Princes Street in Edinburgh distills nothing; Blanton's is made at Buffalo Trace). For a
+  blend with no single home, leave `lat`/`lon` null and say so. Nominatim can't be reached from the workspace.
+- Set `region` to the official Scotch region for scotch (Arran and Jura are Islands; Glenmorangie is Highlands;
+  Speyside distilleries are Speyside even though Speyside sits inside the Highlands).
+- Commit `Claude: add <whiskeys> to the whiskey shelf`. Reply with one bullet per bottle (distillery, region,
+  1–2 sentence summary) and a Sources list.
+
 Club wines going into the fridge reuse the club card's notes: `source: "club"`,
 `sourceNote: "Notes from the Sunshine Wine Club card, <Month YYYY>"`.
 
@@ -123,11 +173,19 @@ those bottles also go in the fridge, add them to `fridge.json` too.
 - Checker: `node tools/render-check.js . <path to a fridge-data checkout> <outdir>`. It serves the pages
   on localhost, answers api.github.com from the data checkout (writes stay in memory), clicks through
   open/rate/finish/add and the club status toggle, and saves light/dark, desktop/phone screenshots. Read the PNGs.
+  For the Whiskey tab it injects a dozen test whiskies in memory (real data untouched), serves blank map tiles from
+  `tools/tile-*.png` and a fake Nominatim answer, and exercises the region filter, pin taps, level, rating,
+  finish, and the add sheet's distillery finder.
 - Keep the two pages' GitHub layer in sync (`ghGetJSON`, `ghPut`, `commit`/`drain`, the localStorage keys).
 - Lessons already learned: a generic class like `empty` collided with `.slot.empty` and stretched the map (slots
   are now `.vacant`); a % width plus `aspect-ratio` inside grid/flex gives bad heights; decode base64 with
   `TextDecoder`, never bare `atob`, or accented names break; and read UTC ISO timestamps as dates through
   `new Date()`, not by slicing.
+- Map lessons: Leaflet sets SVG presentation attributes, so pin colors come from CSS classes on `path.pin`
+  (`.pin.rg-islay` etc. use `--rg-*` tokens that switch for dark mode), not from options. Map containers need
+  `isolation:isolate` or Leaflet's z-index 400–1000 panes cover the sheets and overlays. Keep `zoomSnap` at 1
+  (fractional zoom blurs tiles and leaves seams). The overview's `minZoom` is 1 so Kentucky and Japan fit together.
+  On touch screens map dragging is off so one finger scrolls the page; pinch moves and zooms the map.
 
 ## New device / token
 

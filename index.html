@@ -40,6 +40,10 @@
   --w-sake:#8FB3C4;
   --w-other:#9C8A92;
   --club:#D9782A;
+  /* whiskey: liquid in the level glyph, and distillery regions on the maps (validated; neighbors get the most distinct hues) */
+  --amber:#C27C25;
+  --rg-islay:#00b894;--rg-speyside:#257de0;--rg-highlands:#f2a600;--rg-lowlands:#ee7fac;--rg-campbeltown:#6a4ce2;--rg-islands:#ec4647;
+  --rg-scotland:#7b8794;--rg-ireland:#f47230;--rg-usa:#9a5b1c;--rg-japan:#008a17;--rg-elsewhere:#8d8d8d;
   --shadow:0 1px 2px rgba(42,26,33,.05),0 8px 24px rgba(42,26,33,.05);
   --scrim:rgba(20,10,14,.55);
   --display:"Bodoni Moda","Bodoni 72",Didot,"Times New Roman",serif;
@@ -53,6 +57,9 @@
     --accent:#E07C9B;--accent-ink:#1B0F14;--accent-soft:#3A2129;--star:#E5B65A;--star-off:#4A3B42;--danger:#F08A80;
     --w-red:#B4365C;--w-white:#E2C564;--w-rose:#EE9FB0;--w-sparkling:#E9DDA5;--w-orange:#E19A55;--w-dessert:#C98436;--w-sake:#9CC3D6;--w-other:#8F7C85;
     --club:#F5B26A;
+    --amber:#E0A458;
+    --rg-islay:#00a888;--rg-speyside:#338ced;--rg-highlands:#d28e05;--rg-lowlands:#e24d8b;--rg-campbeltown:#9887ef;--rg-islands:#eb6263;
+    --rg-scotland:#8a96a3;--rg-ireland:#e76624;--rg-usa:#b9783a;--rg-japan:#0aac23;--rg-elsewhere:#8f8f8f;
     --shadow:0 1px 2px rgba(0,0,0,.35);--scrim:rgba(5,2,4,.7);
     color-scheme:dark;
   }
@@ -300,6 +307,88 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
 .checkrow{display:flex;align-items:center;gap:8px;font-size:14px}
 .checkrow input{width:18px;height:18px;accent-color:var(--accent)}
 
+/* Whiskey tab: distillery map (sticky on the left, like the fridge) beside the bottle list */
+.layout.view-whiskey{grid-template-columns:420px minmax(0,1fr)}
+.layout.view-whiskey.single{grid-template-columns:minmax(0,1fr)}
+.whiskey-col{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid;gap:10px;min-width:0}
+.wmap-card{position:relative;border:1.5px solid var(--ink);border-radius:20px;overflow:hidden;background:var(--sunk);isolation:isolate}
+.wmap{height:460px;width:100%}
+.wmap-msg{position:absolute;inset:0;z-index:800;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;font-size:13.5px;color:var(--muted);pointer-events:none}
+.wmap-msg span{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;max-width:30ch;box-shadow:var(--shadow)}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.legend .chip{padding:5px 10px;font-size:12.5px}
+.wmap-foot{margin:0 2px;font-size:12px;color:var(--muted)}
+@media (max-width:899px){
+  .layout.view-whiskey{grid-template-columns:minmax(0,1fr)}
+  .whiskey-col{position:static}
+  .wmap{height:320px}
+}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:3px;gap:2px}
+.seg button{border:0;background:transparent;border-radius:7px;padding:6px 11px;font-size:13px;font-weight:500;color:var(--muted);display:inline-flex;gap:6px;align-items:baseline;white-space:nowrap}
+.seg button .n{font:500 11px/1 var(--mono)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+/* Leaflet, restyled to the app (the stylesheet is loaded before this one, so equal selectors here win) */
+.leaflet-container{background:var(--sunk);font:400 12px/1.4 var(--body)}
+.leaflet-bar{border:1px solid var(--line)!important;box-shadow:none!important;border-radius:9px!important;overflow:hidden}
+.leaflet-bar a,.leaflet-bar a:hover{background:var(--surface);color:var(--ink);border-bottom-color:var(--line);width:30px;height:30px;line-height:30px}
+.leaflet-bar a.leaflet-disabled{background:var(--sunk);color:var(--muted)}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 82%,transparent)!important;color:var(--muted);font-size:9.5px;border-radius:6px 0 0 0;padding:0 5px}
+.leaflet-control-attribution a{color:var(--muted)}
+path.pin{stroke:var(--surface);stroke-width:2px;fill-opacity:1;stroke-opacity:1;transition:opacity .15s}
+.pin.rg-islay{fill:var(--rg-islay)}.pin.rg-speyside{fill:var(--rg-speyside)}.pin.rg-highlands{fill:var(--rg-highlands)}
+.pin.rg-lowlands{fill:var(--rg-lowlands)}.pin.rg-campbeltown{fill:var(--rg-campbeltown)}.pin.rg-islands{fill:var(--rg-islands)}
+.pin.rg-scotland{fill:var(--rg-scotland)}.pin.rg-ireland{fill:var(--rg-ireland)}.pin.rg-usa{fill:var(--rg-usa)}
+.pin.rg-japan{fill:var(--rg-japan)}.pin.rg-elsewhere{fill:var(--rg-elsewhere)}
+path.pin.sel{stroke:var(--ink);stroke-width:3px}
+path.pin.dim{opacity:.22}
+.leaflet-tooltip.pinlabel{background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--ink);border:0;border-radius:5px;box-shadow:none;padding:1px 5px;font:500 10.5px/1.35 var(--mono);white-space:nowrap}
+.leaflet-tooltip.pinlabel::before{display:none}
+.leaflet-tooltip.pinlabel.sel{font-weight:600;background:var(--ink);color:var(--bg)}
+.leaflet-tooltip.pinlabel.dim{opacity:.35!important}
+.leaflet-tooltip.pinlabel b{font-weight:600;color:var(--muted)}
+.leaflet-popup-content-wrapper{background:var(--surface);color:var(--ink);border-radius:12px;box-shadow:var(--shadow)}
+.leaflet-popup-tip{background:var(--surface)}
+.leaflet-popup-content{margin:10px 12px;font:400 13px/1.4 var(--body)}
+.pop-h{margin:0 0 6px;font:500 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pop-list{display:grid;gap:4px}
+.pop-list button{all:unset;cursor:pointer;display:block;padding:5px 8px;border-radius:7px;background:var(--sunk);font-size:13px}
+.pop-list button:hover,.pop-list button:focus-visible{background:var(--accent-soft);color:var(--accent)}
+.pickpin{width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.35);box-sizing:border-box}
+
+/* Whiskey list + card */
+.lvl{width:38px;display:flex;justify-content:center;flex:none}
+.glyph{width:16px;height:32px;display:block;overflow:visible}
+.glyph .bf{fill:var(--sunk)}
+.glyph .bs{fill:none;stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round}
+.glyph .lq{fill:var(--amber)}
+.glyph .cap{fill:var(--accent)}
+.item.wh .mdot{background:var(--rg)}
+.wh .swatch{background:var(--rg)}
+.age{font:500 13px/1 var(--mono);border:1px solid var(--ink);border-radius:4px;padding:5px 7px 4px;white-space:nowrap}
+.wloc{display:grid;gap:10px;padding-top:12px}
+.cmap{height:200px;border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;isolation:isolate;background:var(--sunk)}
+.cmap > div{width:100%;height:100%}
+.wloc-text{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.wloc-text .btn{flex:none}
+.levelpick{display:grid;gap:8px}
+.levelpick .seg{flex-wrap:wrap;justify-self:start}
+.levelpick .seg button{padding:6px 10px}
+
+/* Whiskey sheet: distillery finder */
+.distpick{border:0;margin:0;padding:0;display:grid;gap:10px;min-width:0}
+.distpick legend{font:500 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0;margin-bottom:8px}
+.findrow{display:flex;gap:8px}
+.findrow input{flex:1;min-width:0;font:400 16px/1.4 var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+.findrow input:focus{outline:none;border-color:var(--accent)}
+.findres{display:grid;gap:6px}
+.findres button{all:unset;cursor:pointer;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 11px;font-size:13.5px;line-height:1.35}
+.findres button:hover,.findres button:focus-visible{border-color:var(--accent)}
+.findres small{display:block;color:var(--muted);font-size:12px}
+.pickmap{height:230px;border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;isolation:isolate;background:var(--sunk)}
+.pickmap > div{width:100%;height:100%}
+.llrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font:400 12.5px/1.4 var(--mono);color:var(--muted)}
+
 /* Toast + lightbox */
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 8px 8px 16px;border-radius:999px;font-size:13px;z-index:60;box-shadow:var(--shadow);max-width:calc(100% - 32px);display:flex;align-items:center;gap:10px}
 .toast.err{background:var(--danger);color:var(--surface)}
@@ -328,12 +417,13 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
 </nav>
 
 <header class="top wrap">
-  <h1>Wine &amp; Sake <em>Fridge</em></h1>
+  <h1 id="title">Wine &amp; Sake <em>Fridge</em></h1>
   <p class="summary" id="summary">Loading…</p>
   <div class="tabbar" id="tabbar">
     <div class="tabs" role="tablist" aria-label="Views">
       <button type="button" class="tab" role="tab" id="tab-fridge" data-view="fridge" aria-selected="true">In the fridge <span class="n" id="nFridge"></span></button>
       <button type="button" class="tab" role="tab" id="tab-finished" data-view="finished" aria-selected="false">Finished <span class="n" id="nFinished"></span></button>
+      <button type="button" class="tab" role="tab" id="tab-whiskey" data-view="whiskey" aria-selected="false">Whiskey <span class="n" id="nWhiskey"></span></button>
     </div>
     <button type="button" class="btn primary addbtn" id="addBtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a bottle</button>
   </div>
@@ -345,12 +435,19 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     <p class="club-key" id="clubKey" hidden><span><b>Orange</b> names are Sunshine Wine Club bottles</span></p>
     <div id="placebar"></div>
   </aside>
+  <aside class="whiskey-col" id="whiskeyCol" aria-label="Distillery map" hidden>
+    <div class="wmap-card"><div class="wmap" id="wmap"></div><div class="wmap-msg" id="wmapMsg" hidden></div></div>
+    <div class="legend" id="wLegend" role="group" aria-label="Region"></div>
+    <p class="wmap-foot" id="wmapFoot"></p>
+  </aside>
   <section id="listCol" aria-label="Bottles">
     <div class="toolbar" id="toolbar">
       <label class="search" for="q">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Search bottles, grapes, places or foods" autocomplete="off" aria-label="Search">
       </label>
+      <div class="seg" id="wSub" role="group" aria-label="Show" hidden></div>
+      <div class="chips" id="wKinds" role="group" aria-label="Kind" hidden></div>
       <div class="chips" id="typeChips" role="group" aria-label="Type"></div>
       <label class="sortsel" for="country" id="countryWrap" hidden>Country
         <select id="country"></select>
@@ -424,6 +521,69 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   </div>
 </div>
 
+<div class="sheet" id="wsheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+    <header class="sheet-head"><h2 id="wTitle">Add a whiskey</h2><button type="button" class="btn ghost" data-wclose>Close</button></header>
+    <form id="wform" novalidate style="display:contents">
+      <div class="sheet-body">
+        <div class="photo-row">
+          <div class="photo-prev" id="wPhotoPrev">No photo</div>
+          <div class="photo-ctl">
+            <label class="btn" for="wPhoto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Photo of the label</label>
+            <input type="file" id="wPhoto" accept="image/*" hidden>
+            <p class="status" id="wPhotoStatus">Optional. Or send Claude a photo and it will look the bottle up, find the distillery and pin it.</p>
+          </div>
+        </div>
+        <div class="match" id="wMatch" hidden></div>
+        <div class="fgrid">
+          <label for="wKind">Kind
+            <select id="wKind">
+              <option value="scotch">Scotch</option><option value="bourbon">Bourbon</option><option value="rye">Rye</option>
+              <option value="american">Other American</option><option value="irish">Irish</option><option value="japanese">Japanese</option>
+              <option value="canadian">Canadian</option><option value="world">Other whisky</option><option value="other">Not whiskey</option>
+            </select>
+          </label>
+          <label for="wAge">Age<input id="wAge" placeholder="12 years, or NAS" autocomplete="off"></label>
+          <label class="wide" for="wProducer">Distillery or brand<input id="wProducer" placeholder="Lagavulin, Blanton’s…" autocomplete="off"></label>
+          <label class="wide" for="wName">Expression<input id="wName" placeholder="16 Year Old, Single Barrel…" autocomplete="off"></label>
+          <label for="wStyle">Style<input id="wStyle" list="wStyles" placeholder="Single malt" autocomplete="off"></label>
+          <label for="wAbv">ABV<input id="wAbv" placeholder="43%" autocomplete="off"></label>
+          <label for="wRegion">Region<input id="wRegion" list="wRegions" placeholder="Islay, Kentucky…" autocomplete="off"></label>
+          <label for="wCountry">Country<input id="wCountry" autocomplete="off"></label>
+        </div>
+        <datalist id="wStyles"><option value="Single malt"><option value="Blended malt"><option value="Blended Scotch"><option value="Single grain"><option value="Straight bourbon"><option value="Bottled-in-bond"><option value="Straight rye"><option value="Single pot still"><option value="Blended"></datalist>
+        <datalist id="wRegions"><option value="Islay"><option value="Speyside"><option value="Highlands"><option value="Lowlands"><option value="Campbeltown"><option value="Islands"><option value="Kentucky"><option value="Tennessee"></datalist>
+        <fieldset class="distpick">
+          <legend>Distillery on the map</legend>
+          <div class="findrow"><input id="wDist" placeholder="Distillery name, e.g. Lagavulin Distillery" autocomplete="off" aria-label="Distillery name"><button type="button" class="btn" id="wFind">Find</button></div>
+          <div class="findres" id="wFindRes"></div>
+          <div class="pickmap" id="wPickMap"></div>
+          <div class="fgrid"><label class="wide" for="wPlace">Town or area<input id="wPlace" placeholder="Port Ellen, Isle of Islay" autocomplete="off"></label></div>
+          <div class="llrow"><span id="wLL">No pin yet. Find the distillery, or tap the map to drop one.</span><button type="button" class="btn ghost" id="wClearPin" hidden>Remove pin</button></div>
+        </fieldset>
+        <div class="fgrid">
+          <label class="wide" for="wCask">Cask<input id="wCask" placeholder="Ex-bourbon, sherry finish…" autocomplete="off"></label>
+          <label class="wide" for="wGrain"><span id="wGrainL">Grain</span><input id="wGrain" autocomplete="off"></label>
+          <label class="wide" for="wNose">Nose<input id="wNose" placeholder="Separate with commas" autocomplete="off"></label>
+          <label class="wide" for="wPalate">Palate<input id="wPalate" placeholder="Separate with commas" autocomplete="off"></label>
+          <label class="wide" for="wFinish">Finish<input id="wFinish" placeholder="Separate with commas" autocomplete="off"></label>
+          <label class="wide" for="wServe">Serve<input id="wServe" placeholder="Neat, a few drops of water…" autocomplete="off"></label>
+          <label class="wide" for="wFacts">About<textarea id="wFacts" rows="3" placeholder="One fact per line"></textarea></label>
+          <label for="wBoughtOn">Bought on<input type="date" id="wBoughtOn"></label>
+          <label for="wBoughtFrom">Bought from<input id="wBoughtFrom" placeholder="Shop, distillery, gift…" autocomplete="off"></label>
+        </div>
+        <div class="levelpick" id="wLevelWrap"><span class="sec-h"><span>How full?</span></span><div class="seg" id="wLevel" role="group" aria-label="How full"></div></div>
+        <p class="hint" id="wEditNote" hidden>Changes to the notes apply to every bottle of this whiskey.</p>
+      </div>
+      <footer class="sheet-foot">
+        <p class="err" id="wErr"></p>
+        <button type="button" class="btn" data-wclose>Cancel</button>
+        <button type="submit" class="btn primary" id="wSave">Add to the shelf</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
 <div class="sheet" id="settings" hidden>
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <header class="sheet-head"><h2 id="setTitle">Settings</h2><button type="button" class="btn ghost" data-close-settings>Close</button></header>
@@ -448,7 +608,9 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   /* ================= config ================= */
   const PEOPLE = {chad:'Chad', nadia:'Nadia'};
   const DATA_PATH = 'fridge.json';
-  const EMPTY = {version:1, wines:{}, bottles:{}, tastings:{}};
+  const EMPTY = {version:1, wines:{}, bottles:{}, tastings:{}, spirits:{}, spiritBottles:{}, spiritTastings:{}};
+  const DOC_KEYS = Object.keys(EMPTY).filter(k => k !== 'version');
+  const ensureKeys = d => { DOC_KEYS.forEach(k => { if(!d[k] || typeof d[k] !== 'object') d[k] = {}; }); return d; };
   const LS = {token:'fridge_token', owner:'fridge_owner', repo:'fridge_repo', person:'fridge_person', view:'fridge_view'};
   const BORROW = ['mm_token', 'twospins_token'];   // tokens other apps on this site may already hold
   function cfgGet(k, d){ try{ const v = localStorage.getItem(LS[k] || k); return v == null || v === '' ? d : v; }catch(e){ return d; } }
@@ -542,7 +704,10 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     view:'fridge', sel:null, fsel:null, ping:false,
     q:'', type:'all', country:'all', fsort:'recent',
     placing:null, confirmRemove:null,
-    drafts:new Map()
+    drafts:new Map(),
+    // whiskey tab
+    spirits:new Map(), sbottles:new Map(),
+    wv:'shelf', wsel:null, wfsel:null, wkind:'all', wregion:'all'
   };
   try{ const v = JSON.parse(cfgGet('view', 'null')); if(v && v.fsort) S.fsort = v.fsort; }catch(e){}
   const persist = () => cfgSet('view', JSON.stringify({fsort:S.fsort}));
@@ -599,16 +764,19 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     return m;
   }
   function inFridgeCount(key){ return fridgeBottles().filter(([, b]) => b.wine === key).length; }
-  function ratingsFor(key){
+  // Ratings live in doc.tastings for wines and doc.spiritTastings for whiskey (sc = 'spirit'), same shape.
+  const tastingsOf = sc => (sc === 'spirit' ? S.doc.spiritTastings : S.doc.tastings) || {};
+  const draftKey = (key, sc) => (sc === 'spirit' ? 's:' : '') + key;
+  function ratingsFor(key, sc){
     const out = [];
-    Object.entries(S.doc.tastings || {}).forEach(([person, m]) => {
+    Object.entries(tastingsOf(sc)).forEach(([person, m]) => {
       const t = m && m[key];
       if(t && ((t.stars|0) > 0 || (t.note && String(t.note).trim()))) out.push({person, stars:t.stars|0, note:t.note || '', at:t.updatedAt || ''});
     });
     return out;
   }
-  function avgFor(key){ const r = ratingsFor(key).filter(x => x.stars > 0); return r.length ? r.reduce((a,b) => a + b.stars, 0) / r.length : null; }
-  function mine(key){ return ((S.doc.tastings || {})[S.me] || {})[key] || {}; }
+  function avgFor(key, sc){ const r = ratingsFor(key, sc).filter(x => x.stars > 0); return r.length ? r.reduce((a,b) => a + b.stars, 0) / r.length : null; }
+  function mine(key, sc){ return (tastingsOf(sc)[S.me] || {})[key] || {}; }
   const canEdit = () => S.phase === 'ready' && !S.readOnly;
   const canRate = () => canEdit() && !!S.me;
 
@@ -639,7 +807,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   /* ================= render ================= */
   let queued = false;
   function scheduleRender(){ if(queued) return; queued = true; setTimeout(() => { queued = false; renderAll(); }, 0); }
-  function renderAll(){ renderHeader(); renderFridge(); renderChips(); renderList(); hydrateImages(); }
+  function renderAll(){ renderHeader(); renderFridge(); renderChips(); renderWControls(); renderList(); renderWMap(); mountCardMaps(); hydrateImages(); }
 
   function renderHeader(){
     const ready = S.phase === 'ready';
@@ -649,20 +817,33 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     const fin = finishedByWine();
     let finTotal = 0; fin.forEach(v => { finTotal += v.length; });
     const sm = $('#summary');
+    const wv = S.view === 'whiskey';
+    const shelf = shelfBottles();
+    $('#title').innerHTML = wv ? 'Whiskey <em>Shelf</em>' : 'Wine &amp; Sake <em>Fridge</em>';
     if(S.phase === 'loading') sm.textContent = 'Loading…';
     else if(!ready) sm.textContent = 'What’s in the fridge, where it sits, and what we’ve finished.';
+    else if(wv){
+      const open = shelf.filter(([, b]) => b.opened).length;
+      const dist = new Set(shelf.map(([, b]) => llOf(spiritOf(b))).filter(Boolean).map(ll => ll.join(','))).size;
+      let wfin = 0; finishedBySpirit().forEach(v => { wfin += v.length; });
+      sm.innerHTML = `<b>${shelf.length}</b> ${shelf.length === 1 ? 'bottle' : 'bottles'} on the shelf` + (shelf.length ? ` · <b>${open}</b> open · <b>${dist}</b> ${dist === 1 ? 'distillery' : 'distilleries'} on the map` : '') + ` · <b>${wfin}</b> finished`;
+    }
     else sm.innerHTML = `<b>${fb.length}</b> ${fb.length === 1 ? 'bottle' : 'bottles'} in the fridge · <b>${filled}</b> of 18 slots filled` + (loose ? ` · <b>${loose}</b> not in a slot` : '') + ` · <b>${finTotal}</b> finished`;
     $('#nFridge').textContent = ready ? fb.length : '';
     $('#nFinished').textContent = ready ? fin.size : '';
+    $('#nWhiskey').textContent = ready && S.sbottles.size ? shelf.length : '';
     document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === S.view)));
     $('#tabbar').hidden = !ready;
-    $('#toolbar').hidden = !ready;
+    $('#toolbar').hidden = !ready || (wv && !S.sbottles.size);
     $('#addBtn').hidden = !canEdit();
     const lay = $('#layout');
     lay.classList.toggle('single', S.view === 'finished' || !ready);
     lay.classList.toggle('view-fridge', S.view === 'fridge');
+    lay.classList.toggle('view-whiskey', wv);
     $('#fridgeCol').hidden = S.view !== 'fridge' || !ready;
-    $('#fsortWrap').hidden = S.view !== 'finished';
+    $('#whiskeyCol').hidden = !wv || !ready;
+    $('#q').placeholder = wv ? 'Search whiskey or distilleries' : 'Search bottles, grapes, places or foods';
+    $('#fsortWrap').hidden = !(S.view === 'finished' || (wv && S.wv === 'finished'));
     $('#fsort').value = S.fsort;
     $('#refreshBtn').classList.toggle('spin', S.phase === 'loading' || S.pending.length > 0);
   }
@@ -709,7 +890,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   }
 
   function renderChips(){
-    if(S.phase !== 'ready'){ $('#typeChips').innerHTML = ''; return; }
+    if(S.phase !== 'ready' || S.view === 'whiskey'){ $('#typeChips').innerHTML = ''; $('#countryWrap').hidden = true; return; }
     const src = S.view === 'fridge'
       ? fridgeBottles().map(([, b]) => wineOf(b))
       : [...finishedByWine().keys()].map(k => S.wines.get(k) || {});
@@ -737,45 +918,36 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   }
   function txtRow(label, v){ return v ? `<div><dt>${label}</dt><dd class="txt">${hl(v)}</dd></div>` : ''; }
   function starsRO(n){ let s = ''; for(let i = 1; i <= 5; i++) s += `<span class="${i <= n ? 'on' : ''}">★</span>`; return `<span class="stars ro" aria-label="${n} of 5 stars">${s}</span>`; }
-  function miniStars(key){ const a = avgFor(key); return a == null ? '' : `<span class="mini-stars"><i>★</i> ${a.toFixed(1)}</span>`; }
+  function miniStars(key, sc){ const a = avgFor(key, sc); return a == null ? '' : `<span class="mini-stars"><i>★</i> ${a.toFixed(1)}</span>`; }
 
   function cardBody(w, vintageText){
     const t = TYPES[w.type] ? w.type : 'other';
     const place = [w.appellation, [w.region, w.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
     const top = [typeLabel(t), w.style || ''].filter(Boolean).join(' · ');
-    let prov = '';
-    if(w.source === 'research'){
-      const src = Array.isArray(w.sources) ? w.sources.filter(s => s && typeof s.url === 'string' && /^https?:\/\//i.test(s.url)) : [];
-      const host = u => { try{ return new URL(u).hostname.replace(/^www\./,''); }catch(e){ return 'Source'; } };
-      prov = `<span>Notes from web research${src.length ? ':' : ''}</span>${src.slice(0,4).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title || host(s.url))}</a>`).join('')}`;
-    } else if(w.source === 'label'){
-      prov = `<span>Notes drafted from the label photo. Check before trusting.</span>`;
-    } else if(w.sourceNote){
-      prov = `<span>${esc(w.sourceNote)}</span>`;
-    }
-    const thumb = w.labelPath ? `<button type="button" class="labelthumb" data-act="photo" data-path="${esc(w.labelPath)}"><img data-img="${esc(w.labelPath)}" alt="">Label photo</button>` : '';
     return `
       <div class="card-top"><span class="type"><span class="swatch"></span>${hl(top)}</span>${vintageText ? `<span class="vintage">${esc(vintageText)}</span>` : ''}</div>
       ${place || w.abv ? `<p class="place">${hl(place)}${place && w.abv ? ' · ' : ''}${w.abv ? esc(w.abv) : ''}</p>` : ''}
       <dl class="profile">${txtRow(varLabel(t), w.varietal)}${tagRow('Nose', w.nose)}${tagRow('Palate', w.palate)}${tagRow('Pair with', w.pairings, 'pair')}${txtRow('Serve', w.serve)}</dl>
       ${arr(w.facts).length ? `<ul class="facts">${arr(w.facts).map(f => `<li>${hl(f)}</li>`).join('')}</ul>` : ''}
-      ${prov || thumb ? `<div class="prov">${thumb}${prov}</div>` : ''}`;
+      ${provBlock(w)}`;
   }
 
-  function ratingsBlock(key){
-    const all = ratingsFor(key), avg = avgFor(key), rated = all.filter(r => r.stars > 0).length;
+  function ratingsBlock(key, sc){
+    sc = sc || 'wine';
+    const all = ratingsFor(key, sc), avg = avgFor(key, sc), rated = all.filter(r => r.stars > 0).length;
+    const dk = draftKey(key, sc), at = `data-key="${esc(key)}" data-sc="${sc}"`;
     let rows = '';
     if(canRate()){
-      const m = mine(key), stars = m.stars | 0, saved = m.note || '';
-      const draft = S.drafts.has(key) ? S.drafts.get(key) : saved;
+      const m = mine(key, sc), stars = m.stars | 0, saved = m.note || '';
+      const draft = S.drafts.has(dk) ? S.drafts.get(dk) : saved;
       let sb = '';
-      for(let i = 1; i <= 5; i++) sb += `<button type="button" class="star${i <= stars ? ' on' : ''}" data-act="star" data-key="${esc(key)}" data-v="${i}" aria-label="${i} of 5 stars" aria-pressed="${i === stars}">★</button>`;
+      for(let i = 1; i <= 5; i++) sb += `<button type="button" class="star${i <= stars ? ' on' : ''}" data-act="star" ${at} data-v="${i}" aria-label="${i} of 5 stars" aria-pressed="${i === stars}">★</button>`;
       rows += `<div class="taste">
         <div class="who"><span class="av" aria-hidden="true">${esc(myName()[0])}</span><span>You</span></div>
         <div class="stars" role="group" aria-label="Your rating">${sb}</div>
         <div class="note-wrap">
-          <textarea id="note-${esc(key)}" data-act="note" data-key="${esc(key)}" rows="2" placeholder="Your tasting note" aria-label="Your tasting note">${esc(draft)}</textarea>
-          <div class="note-row"><span class="tiny">${m.updatedAt ? 'Saved ' + esc(fmtDate(m.updatedAt)) : ''}</span><button type="button" class="save" data-act="savenote" data-key="${esc(key)}" ${draft.trim() === saved ? 'hidden' : ''}>Save note</button></div>
+          <textarea id="note-${esc(dk)}" data-act="note" ${at} rows="2" placeholder="Your tasting note" aria-label="Your tasting note">${esc(draft)}</textarea>
+          <div class="note-row"><span class="tiny">${m.updatedAt ? 'Saved ' + esc(fmtDate(m.updatedAt)) : ''}</span><button type="button" class="save" data-act="savenote" ${at} ${draft.trim() === saved ? 'hidden' : ''}>Save note</button></div>
         </div>
       </div>`;
     }
@@ -890,7 +1062,9 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     }
 
     let html = '';
-    if(S.view === 'fridge'){
+    if(S.view === 'whiskey'){
+      html = whiskeyList();
+    } else if(S.view === 'fridge'){
       const all = fridgeBottles();
       if(!all.length){
         el.innerHTML = `<div class="emptystate"><h2>Nothing in the fridge yet</h2><p>${canEdit() ? 'Tap an empty slot on the map or <button type="button" class="linkbtn" data-act="add">add a bottle</button>. You can also send Claude a photo of the label and it will look the bottle up and add it.' : 'Bottles will show up here once they’re added.'}</p></div>`;
@@ -925,6 +1099,399 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   }
   function noMatch(){ return `<div class="emptystate"><h2>No matches</h2><p>Nothing fits${S.q ? ` “${esc(S.q)}”` : ' this filter'}. <button type="button" class="linkbtn" data-act="clear">Show everything</button></p></div>`; }
 
+  /* ================= whiskey: domain ================= */
+  const KINDS = {scotch:'Scotch', bourbon:'Bourbon', rye:'Rye', american:'American', irish:'Irish', japanese:'Japanese', canadian:'Canadian', world:'World whisky', other:'Other spirit'};
+  const kindOf = sp => KINDS[sp && sp.kind] ? sp.kind : 'other';
+  const kindLabel = k => KINDS[k] || 'Whiskey';
+  const AMERICAN = new Set(['bourbon', 'rye', 'american']);
+  const KIND_COUNTRY = {scotch:'Scotland', bourbon:'United States', rye:'United States', american:'United States', irish:'Ireland', japanese:'Japan', canadian:'Canada'};
+  // Map colors: one per Scotch region, then by country. Order here is the legend order.
+  const RG = {islay:'Islay', speyside:'Speyside', highlands:'Highlands', lowlands:'Lowlands', campbeltown:'Campbeltown', islands:'Islands', scotland:'Scotland', ireland:'Ireland', usa:'United States', japan:'Japan', elsewhere:'Elsewhere'};
+  const SCOTCH_RG = [['islay', /islay/], ['campbeltown', /campbeltown|kintyre/], ['speyside', /spey/], ['lowlands', /lowland/], ['islands', /island|skye|orkney|jura|mull|arran|lewis|harris|raasay/], ['highlands', /highland/]];
+  function regionGroup(sp){
+    const k = sp.kind, c = fold(sp.country).trim(), r = fold(sp.region);
+    if(k === 'scotch' || c === 'scotland'){ for(const [g, re] of SCOTCH_RG) if(re.test(r)) return g; return 'scotland'; }
+    if(k === 'irish' || /ireland/.test(c)) return 'ireland';
+    if(k === 'japanese' || c === 'japan') return 'japan';
+    if(/^(united states( of america)?|usa|us|u\.s\.a?\.?|america)$/.test(c) || (!c && AMERICAN.has(k))) return 'usa';
+    return 'elsewhere';
+  }
+  const rgVar = g => `var(--rg-${RG[g] ? g : 'elsewhere'})`;
+  const spiritTitle = sp => [sp.producer, sp.name].filter(Boolean).join(' ');
+  const distName = sp => String(sp.distillery || sp.producer || sp.name || '').replace(/\s+distillery$/i, '').replace(/^the\s+/i, '').trim() || '?';
+  function spiritOf(b){ return (b && S.spirits.get(b.spirit)) || {}; }
+  function shelfBottles(){ return [...S.sbottles.entries()].filter(([, b]) => b.status !== 'finished'); }
+  function finishedBySpirit(){
+    const m = new Map();
+    S.sbottles.forEach((b, id) => { if(b.status === 'finished'){ if(!m.has(b.spirit)) m.set(b.spirit, []); m.get(b.spirit).push([id, b]); } });
+    m.forEach(v => v.sort((a,b) => String(b[1].finishedOn || '').localeCompare(String(a[1].finishedOn || ''))));
+    return m;
+  }
+  function shelfCount(key){ return shelfBottles().filter(([, b]) => b.spirit === key).length; }
+  function llOf(sp){
+    if(!sp || sp.lat === '' || sp.lat == null || sp.lon === '' || sp.lon == null) return null;
+    const a = +sp.lat, o = +sp.lon;
+    return Number.isFinite(a) && Number.isFinite(o) && Math.abs(a) <= 90 && Math.abs(o) <= 180 ? [a, o] : null;
+  }
+  function ageText(sp){
+    const a = String(sp.age || '').trim();
+    const m = /^(\d{1,2})(\s*(years?|yrs?|yo|y\.o\.)(\s*old)?)?$/i.exec(a);
+    return m ? m[1] + ' yr' : a;
+  }
+  function abvText(sp){
+    const a = String(sp.abv || '').trim();
+    if(!a) return '';
+    const n = parseFloat(a);
+    const proof = AMERICAN.has(sp.kind) && Number.isFinite(n) && !/proof/i.test(a) ? ` · ${Math.round(n * 2)} proof` : '';
+    return a + (/%/.test(a) ? ' ABV' : '') + proof;
+  }
+  const grainLabel = k => AMERICAN.has(k) ? 'Mash bill' : 'Grain';
+  const LEVELS = [[100, 'Full'], [75, '¾'], [50, '½'], [25, '¼'], [10, 'Last pour']];
+  function levelOf(b){ const n = +b.level; return Number.isFinite(n) && n > 0 ? Math.min(100, n) : 100; }
+  function levelText(b){
+    if(b.status === 'finished') return 'Finished';
+    if(!b.opened) return 'Sealed';
+    const n = levelOf(b);
+    if(n >= 100) return 'Open, still full';
+    if(n <= 10) return 'Last pour';
+    const l = LEVELS.find(x => x[0] === n);
+    return (l ? l[1] : n + '%') + ' left';
+  }
+  const GLYPH = 'M6.2 2.5h3.6v5.2c0 1.7 3.9 2.8 3.9 6.1v14.5a1.4 1.4 0 0 1-1.4 1.4H3.7a1.4 1.4 0 0 1-1.4-1.4V13.8c0-3.3 3.9-4.4 3.9-6.1z';
+  function glyph(b){
+    const fin = !b || b.status === 'finished';
+    const lv = fin ? 0 : levelOf(b);
+    const top = 29.7 - 15.7 * lv / 100;
+    return `<svg class="glyph" viewBox="0 0 16 32" aria-hidden="true"><path class="bf" d="${GLYPH}"/>${lv ? `<rect class="lq" x="2.9" y="${top.toFixed(1)}" width="10.2" height="${(29.7 - top).toFixed(1)}" rx="1.2"/>` : ''}<path class="bs" d="${GLYPH}"/>${!fin && !b.opened ? '<rect class="cap" x="5.4" y="0.8" width="5.2" height="3.4" rx="1"/>' : ''}</svg>`;
+  }
+  function spiritHay(sp, b){
+    return fold([sp.producer, sp.name, sp.distillery, sp.place, sp.region, sp.country, kindLabel(kindOf(sp)), RG[regionGroup(sp)], sp.style, sp.age, sp.abv, sp.cask, sp.grain, sp.serve,
+      ...arr(sp.nose), ...arr(sp.palate), ...arr(sp.finish), ...arr(sp.facts), b ? b.purchasedFrom : ''].join(' '));
+  }
+  function matchesSpirit(sp, b, skipRegion){
+    if(S.wkind !== 'all' && kindOf(sp) !== S.wkind) return false;
+    if(!skipRegion && S.wregion !== 'all' && regionGroup(sp) !== S.wregion) return false;
+    const q = fold(S.q).trim();
+    if(q){ const hay = spiritHay(sp, b); if(!q.split(/\s+/).every(t => hay.includes(t))) return false; }
+    return true;
+  }
+  const wfiltering = () => S.wkind !== 'all' || S.wregion !== 'all' || !!S.q.trim();
+  // What the whiskey tab is showing: bottles on the shelf, or one row per whiskey we've finished.
+  function wItems(){
+    if(S.wv === 'finished') return [...finishedBySpirit().entries()].map(([key, fins]) => ({id:fins[0][0], b:fins[0][1], key, sp:S.spirits.get(key) || {}, fins}));
+    return shelfBottles().map(([id, b]) => ({id, b, key:b.spirit, sp:spiritOf(b)}));
+  }
+  const isSelItem = x => S.wv === 'shelf' ? x.id === S.wsel : x.key === S.wfsel;
+
+  /* ================= whiskey: maps (Leaflet, vendored; CARTO tiles from OpenStreetMap data) ================= */
+  const MAP = {loading:null, failed:false, overview:null, layer:null, fitKey:null, cards:new Map(), pick:null};
+  const coarse = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  const darkMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  const tileUrl = () => `https://{s}.basemaps.cartocdn.com/${darkMQ && darkMQ.matches ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`;
+  const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
+  // One finger scrolls the page on phones; pinch (two fingers) moves and zooms the map. The wheel never zooms.
+  const mapOpts = extra => Object.assign({scrollWheelZoom:false, dragging:!coarse, touchZoom:true, boxZoom:false, minZoom:2, maxZoom:17, worldCopyJump:true}, extra || {});
+  function loadLeaflet(){
+    if(window.L) return Promise.resolve(window.L);
+    if(MAP.loading) return MAP.loading;
+    MAP.loading = new Promise((res, rej) => {
+      const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'vendor/leaflet/leaflet.css';
+      document.head.insertBefore(css, document.querySelector('style'));   // before ours, so our overrides win
+      const s = document.createElement('script'); s.src = 'vendor/leaflet/leaflet.js';
+      s.onload = () => { MAP.failed = false; res(window.L); };
+      s.onerror = () => { MAP.loading = null; MAP.failed = true; s.remove(); rej(new Error('leaflet')); };
+      document.head.appendChild(s);
+    });
+    return MAP.loading;
+  }
+  function addTiles(m){
+    m._tiles = L.tileLayer(tileUrl(), {subdomains:'abcd', maxZoom:19, attribution:TILE_ATTR}).addTo(m);
+    if(m.attributionControl) m.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+  }
+  const allMaps = () => [MAP.overview, MAP.pick && MAP.pick.m].concat([...MAP.cards.values()].map(e => e.m)).filter(Boolean);
+  if(darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { allMaps().forEach(m => { if(m._tiles) m._tiles.setUrl(tileUrl()); }); });
+  const wrapLon = x => ((x + 540) % 360) - 180;
+  const round5 = x => Math.round(x * 1e5) / 1e5;
+
+  function ensureOverview(){
+    if(MAP.overview) return MAP.overview;
+    const m = L.map($('#wmap'), mapOpts({minZoom:1}));   // zoomed far enough out to frame Kentucky and Japan together
+    addTiles(m);
+    m.setView([57.0, -4.4], 5);   // Scotland until there are pins
+    MAP.layer = L.layerGroup().addTo(m);
+    m.on('zoomend moveend', () => requestAnimationFrame(declutter));
+    MAP.overview = m;
+    return m;
+  }
+  // Pin labels can't overlap: keep the selected one and the busiest pins, hide the rest until you zoom in.
+  function declutter(){
+    if(!MAP.layer) return;
+    const items = [];
+    MAP.layer.eachLayer(l => { const t = l.getTooltip && l.getTooltip(), el = t && t.getElement(); if(el){ el.style.visibility = ''; items.push({el, prio:l._prio || 0}); } });
+    items.sort((a, b) => b.prio - a.prio);
+    const placed = [];
+    items.forEach(it => {
+      const r = it.el.getBoundingClientRect();
+      if(placed.some(p => !(r.right + 2 < p.left || r.left - 2 > p.right || r.bottom < p.top || r.top > p.bottom))) it.el.style.visibility = 'hidden';
+      else placed.push(r);
+    });
+  }
+  function renderWMap(){
+    if(S.view !== 'whiskey' || S.phase !== 'ready') return;
+    const msg = $('#wmapMsg');
+    const showMsg = t => { msg.innerHTML = t ? `<span>${t}</span>` : ''; msg.hidden = !t; };
+    if(!window.L){
+      showMsg(MAP.failed ? 'The map couldn’t load. Check the connection, then tap refresh.' : 'Loading the map…');
+      loadLeaflet().then(scheduleRender, scheduleRender);
+      return;
+    }
+    const m = ensureOverview();
+    m.invalidateSize();
+    const items = wItems();
+    const pins = new Map();
+    items.forEach(x => {
+      const ll = llOf(x.sp); if(!ll) return;
+      const k = ll[0].toFixed(3) + ',' + ll[1].toFixed(3);
+      if(!pins.has(k)) pins.set(k, {k, ll, items:[], name:distName(x.sp), rg:regionGroup(x.sp)});
+      pins.get(k).items.push(x);
+    });
+    MAP.layer.clearLayers();
+    const filt = wfiltering(), fitLL = [], fitKeys = [];
+    let selLL = null;
+    pins.forEach(p => {
+      const match = p.items.some(x => matchesSpirit(x.sp, x.b));
+      const sel = p.items.some(isSelItem);
+      const dim = filt && !match;
+      const cls = (sel ? ' sel' : '') + (dim ? ' dim' : '');
+      const cm = L.circleMarker(p.ll, {radius:sel ? 9 : 7, className:`pin rg-${p.rg}${cls}`, weight:2, fillOpacity:1, bubblingMouseEvents:false});
+      const n = p.items.length;
+      cm.bindTooltip(`${esc(p.name)}${n > 1 ? ` <b>×${n}</b>` : ''}`, {permanent:true, direction:'right', offset:[8, 0], className:'pinlabel' + cls, opacity:1, interactive:false});
+      cm._prio = (sel ? 1000 : 0) + (dim ? -100 : 0) + n;
+      cm.on('click', () => pinClick(p, cm));
+      cm.on('mouseover', () => { const el = cm.getTooltip().getElement(); if(el) el.style.visibility = ''; });
+      cm.on('mouseout', () => requestAnimationFrame(declutter));
+      cm.addTo(MAP.layer);
+      if(sel){ cm.bringToFront(); selLL = p.ll; }
+      if(!filt || match){ fitLL.push(p.ll); fitKeys.push(p.k); }
+    });
+    // Re-frame only when the set of pins in play changes (a filter, a new bottle); selecting just pans if needed.
+    const fk = S.wv + '|' + fitKeys.sort().join(';');
+    if(fk !== MAP.fitKey){
+      const first = MAP.fitKey == null;
+      MAP.fitKey = fk;
+      if(fitLL.length) m.fitBounds(L.latLngBounds(fitLL), {paddingTopLeft:[34, 34], paddingBottomRight:[96, 34], maxZoom:8, animate:!first && !reduced});
+    } else if(selLL && !m.getBounds().pad(-0.08).contains(selLL)) m.panTo(selLL, {animate:!reduced});
+    requestAnimationFrame(declutter);
+    const none = !S.sbottles.size ? 'Distillery pins show up here as bottles are added.'
+      : !items.length ? '' : !pins.size ? 'None of these bottles has a distillery pin yet.' : '';
+    showMsg(none);
+  }
+  function pinClick(p, cm){
+    if(p.items.length === 1){ selectFromMap(p.items[0]); return; }
+    const box = document.createElement('div');
+    box.innerHTML = `<p class="pop-h">${esc(p.name)}</p><div class="pop-list">${p.items.map((x, i) => `<button type="button" data-i="${i}">${esc(spiritTitle(x.sp) || 'Unnamed bottle')}${S.wv === 'finished' ? ` · ${x.fins.length}×` : ''}</button>`).join('')}</div>`;
+    box.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if(!b) return; MAP.overview.closePopup(); selectFromMap(p.items[+b.dataset.i]); });
+    L.popup({offset:[0, -4], closeButton:false, autoPanPadding:[20, 20]}).setLatLng(p.ll).setContent(box).openOn(MAP.overview);
+  }
+  function selectFromMap(x){
+    if(S.wv === 'shelf') S.wsel = x.id; else S.wfsel = x.key;
+    S.confirmRemove = null;
+    if(!matchesSpirit(x.sp, x.b)){ S.q = ''; S.wkind = 'all'; S.wregion = 'all'; $('#q').value = ''; }
+    renderAll();
+    const el = document.getElementById(S.wv === 'shelf' ? 'wb-' + x.id : 'wf-' + x.key);
+    if(el) el.scrollIntoView({behavior:reduced ? 'auto' : 'smooth', block:window.innerWidth < 900 ? 'start' : 'nearest'});
+  }
+  // A small map on each open card. Its element is kept between renders and moved into the new placeholder.
+  function mountCardMaps(){
+    const holders = [...document.querySelectorAll('#list [data-cmap]')];
+    const live = new Set();
+    if(holders.length && !window.L){
+      holders.forEach(h => { h.innerHTML = `<div class="wmap-msg"><span>${MAP.failed ? 'The map couldn’t load.' : 'Loading the map…'}</span></div>`; });
+      if(!MAP.failed) loadLeaflet().then(scheduleRender, scheduleRender);
+      return;
+    }
+    holders.forEach(h => {
+      const ll = [+h.dataset.lat, +h.dataset.lon], k = h.dataset.cmap + '|' + ll.join(',') + '|' + h.dataset.rg;
+      live.add(k);
+      let e = MAP.cards.get(k);
+      if(!e){
+        const el = document.createElement('div');
+        h.appendChild(el);
+        const m = L.map(el, mapOpts({zoomControl:true}));
+        addTiles(m);
+        m.setView(ll, 8);
+        L.circleMarker(ll, {radius:8, className:`pin sel rg-${h.dataset.rg}`, weight:3, fillOpacity:1, interactive:false}).addTo(m);
+        e = {el, m};
+        MAP.cards.set(k, e);
+      } else if(e.el.parentNode !== h) h.appendChild(e.el);
+      e.m.invalidateSize();
+    });
+    MAP.cards.forEach((e, k) => { if(!live.has(k)){ e.m.remove(); MAP.cards.delete(k); } });
+  }
+
+  /* ================= whiskey: render ================= */
+  function renderWControls(){
+    const on = S.view === 'whiskey' && S.phase === 'ready';
+    $('#wSub').hidden = !on || !S.sbottles.size;
+    $('#wKinds').hidden = !on;
+    if(!on){ $('#wLegend').innerHTML = ''; $('#wmapFoot').textContent = ''; return; }
+    const nShelf = shelfBottles().length, nFin = finishedBySpirit().size;
+    $('#wSub').innerHTML = [['shelf', 'On the shelf', nShelf], ['finished', 'Finished', nFin]].map(([v, l, n]) => `<button type="button" data-wsub="${v}" aria-pressed="${S.wv === v}">${l} <span class="n">${n}</span></button>`).join('');
+    const items = wItems();
+    const kc = {};
+    items.forEach(x => { const k = kindOf(x.sp); kc[k] = (kc[k] || 0) + 1; });
+    if(S.wkind !== 'all' && !kc[S.wkind]) S.wkind = 'all';
+    const kinds = Object.keys(KINDS).filter(k => kc[k]);
+    $('#wKinds').innerHTML = kinds.length < 2 && S.wkind === 'all' ? '' :
+      [`<button type="button" class="chip" data-wkind="all" aria-pressed="${S.wkind === 'all'}">All</button>`]
+      .concat(kinds.map(k => `<button type="button" class="chip" data-wkind="${k}" aria-pressed="${S.wkind === k}">${esc(kindLabel(k))}<span class="n">${kc[k]}</span></button>`)).join('');
+    // The legend is also the region filter. Its counts follow the kind and search filters, not the region one.
+    const all = {}, rc = {};
+    items.forEach(x => { const g = regionGroup(x.sp); all[g] = 1; if(matchesSpirit(x.sp, x.b, true)) rc[g] = (rc[g] || 0) + 1; });
+    if(S.wregion !== 'all' && !all[S.wregion]) S.wregion = 'all';
+    const groups = Object.keys(RG).filter(g => rc[g] || g === S.wregion);
+    $('#wLegend').innerHTML = !groups.length ? '' :
+      (groups.length > 1 || S.wregion !== 'all' ? `<button type="button" class="chip" data-wrg="all" aria-pressed="${S.wregion === 'all'}">All regions</button>` : '')
+      + groups.map(g => `<button type="button" class="chip" data-wrg="${g}" aria-pressed="${S.wregion === g}" style="--sw:${rgVar(g)}"><span class="dot"></span>${esc(RG[g])}<span class="n">${rc[g] || 0}</span></button>`).join('');
+    const noPin = items.filter(x => !llOf(x.sp)).length;
+    $('#wmapFoot').textContent = [
+      items.length ? (coarse ? 'Tap a pin to open its bottle. Pinch to move or zoom the map.' : 'Click a pin to open its bottle.') : '',
+      noPin ? `${noPin} ${noPin === 1 ? 'bottle has' : 'bottles have'} no distillery pin yet.` : ''
+    ].filter(Boolean).join(' ');
+  }
+
+  function provBlock(w){
+    let prov = '';
+    if(w.source === 'research'){
+      const src = Array.isArray(w.sources) ? w.sources.filter(s => s && typeof s.url === 'string' && /^https?:\/\//i.test(s.url)) : [];
+      const host = u => { try{ return new URL(u).hostname.replace(/^www\./,''); }catch(e){ return 'Source'; } };
+      prov = `<span>Notes from web research${src.length ? ':' : ''}</span>${src.slice(0,4).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title || host(s.url))}</a>`).join('')}`;
+    } else if(w.source === 'label'){
+      prov = `<span>Notes drafted from the label photo. Check before trusting.</span>`;
+    } else if(w.sourceNote){
+      prov = `<span>${esc(w.sourceNote)}</span>`;
+    }
+    const thumb = w.labelPath ? `<button type="button" class="labelthumb" data-act="photo" data-path="${esc(w.labelPath)}"><img data-img="${esc(w.labelPath)}" alt="">Label photo</button>` : '';
+    return prov || thumb ? `<div class="prov">${thumb}${prov}</div>` : '';
+  }
+  function spiritCard(sp){
+    const k = kindOf(sp), top = [kindLabel(k), sp.style].filter(Boolean).join(' · ');
+    const age = ageText(sp), abv = abvText(sp);
+    return `
+      <div class="card-top"><span class="type"><span class="swatch"></span>${hl(top)}</span>${age ? `<span class="age">${esc(age)}</span>` : ''}</div>
+      ${abv ? `<p class="place">${hl(abv)}</p>` : ''}
+      <dl class="profile">${txtRow(grainLabel(k), sp.grain)}${txtRow('Cask', sp.cask)}${tagRow('Nose', sp.nose)}${tagRow('Palate', sp.palate)}${tagRow('Finish', sp.finish)}${txtRow('Serve', sp.serve)}</dl>
+      ${arr(sp.facts).length ? `<ul class="facts">${arr(sp.facts).map(f => `<li>${hl(f)}</li>`).join('')}</ul>` : ''}
+      ${provBlock(sp)}`;
+  }
+  function wLocBlock(sp, holder, b){
+    const ll = llOf(sp), g = regionGroup(sp);
+    const seen = new Set(), uniq = x => { const k = fold(x).trim(); if(!k || seen.has(k)) return false; seen.add(k); return true; };
+    const place = [sp.place].filter(uniq), rc = [sp.region, sp.country].filter(uniq);
+    const where = [place.join(''), rc.join(', ')].filter(Boolean).join(' · ');
+    const state = b ? [levelText(b), b.addedOn ? 'added ' + fmtDate(b.addedOn) : ''].filter(Boolean).join(' · ') : '';
+    const maps = ll ? `<a class="btn" href="https://www.google.com/maps/search/?api=1&amp;query=${ll[0]},${ll[1]}" target="_blank" rel="noopener">Open in Maps<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>` : '';
+    return `<div class="wloc">
+      ${ll ? `<div class="cmap" data-cmap="${esc(holder)}" data-lat="${ll[0]}" data-lon="${ll[1]}" data-rg="${g}" role="img" aria-label="Map showing ${esc(distName(sp))}"></div>` : ''}
+      <div class="wloc-text"><div>
+        <p class="loc">${hl(sp.distillery || sp.producer || 'Distillery')}</p>
+        ${where ? `<p class="loc-sub">${hl(where)}</p>` : ''}
+        ${!ll ? `<p class="loc-sub">No pin on the map yet${canEdit() ? '. Edit to find the distillery.' : '.'}</p>` : ''}
+        ${state ? `<p class="loc-sub">${esc(state)}</p>` : ''}
+        ${b && boughtText(b) ? `<p class="loc-sub">${hl(boughtText(b))}</p>` : ''}
+      </div>${maps}</div>
+    </div>`;
+  }
+  function levelPicker(id, b){
+    const cur = !b.opened ? 'sealed' : String(levelOf(b));
+    const opts = [['sealed', 'Sealed']].concat(LEVELS.map(([v, l]) => [String(v), l]));
+    return `<div class="levelpick"><span class="sec-h"><span>How full?</span></span><div class="seg" role="group" aria-label="How full">${opts.map(([v, l]) => `<button type="button" data-act="wlevel" data-id="${esc(id)}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div></div>`;
+  }
+  function itemMeta(sp){ return [sp.region || sp.country, sp.style || kindLabel(kindOf(sp)), ageText(sp), sp.abv].filter(Boolean).join(' · '); }
+  function whiskeyItem(id, b){
+    const sp = spiritOf(b), open = S.wsel === id, g = regionGroup(sp);
+    let body = '';
+    if(open){
+      let acts = '';
+      if(canEdit()){
+        const confirming = S.confirmRemove === 'w:' + id;
+        acts = `${levelPicker(id, b)}<div class="actions">
+          <button type="button" class="btn primary" data-act="wfinish" data-id="${esc(id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Finished it</button>
+          <button type="button" class="btn" data-act="wanother" data-id="${esc(id)}">Add another bottle</button>
+          <button type="button" class="btn" data-act="wedit" data-id="${esc(id)}">Edit</button>
+          <button type="button" class="btn ${confirming ? 'confirm' : 'ghost danger'}" data-act="wremove" data-id="${esc(id)}">${confirming ? 'Tap again to remove' : 'Remove'}</button>
+        </div>`;
+      }
+      body = `<div class="item-body">${wLocBlock(sp, 'b:' + id, b)}${spiritCard(sp)}${acts}${ratingsBlock(b.spirit, 'spirit')}</div>`;
+    }
+    const pill = b.opened ? `<span class="pill on">${esc(levelText(b))}</span>` : '<span class="pill">Sealed</span>';
+    return `<article class="item wh${open ? ' open' : ''}" id="wb-${esc(id)}" style="--rg:${rgVar(g)}">
+      <button type="button" class="item-head" data-act="wtoggle" data-id="${esc(id)}" aria-expanded="${open}">
+        <span class="lvl" title="${esc(levelText(b))}">${glyph(b)}</span>
+        <span class="mdot" title="${esc(RG[g])}"></span>
+        <span class="it-main"><span class="it-prod">${hl(sp.producer || sp.name || 'Unnamed bottle')}</span>${sp.producer && sp.name ? `<span class="it-name">${hl(sp.name)}</span>` : ''}<span class="it-meta">${hl(itemMeta(sp))}</span></span>
+        <span class="it-side">${pill}${miniStars(b.spirit, 'spirit')}</span>
+      </button>${body}
+    </article>`;
+  }
+  function wFinishedItem(key, fins){
+    const sp = S.spirits.get(key) || {}, open = S.wfsel === key, g = regionGroup(sp);
+    const last = fins[0] ? fins[0][1].finishedOn : '';
+    const here = shelfCount(key);
+    const meta = [last ? 'Last finished ' + fmtDate(last) : '', sp.region || sp.country].filter(Boolean).join(' · ');
+    let body = '';
+    if(open){
+      const hist = fins.map(([id, b]) => `<li><span class="when">${esc(fmtDate(b.finishedOn) || 'Date not set')}</span>${b.purchasedFrom ? `<span class="tiny">from ${esc(b.purchasedFrom)}</span>` : ''}${canEdit() ? `<button type="button" class="btn ghost" data-act="wputback" data-id="${esc(id)}">Put back</button>` : ''}</li>`).join('');
+      body = `<div class="item-body">
+        ${wLocBlock(sp, 'f:' + key, null)}
+        <div class="fin-card">${spiritCard(sp)}</div>
+        <p class="sec-h"><span>Bottles we’ve finished</span><span class="avg">${fins.length}</span></p>
+        <ol class="hist">${hist}</ol>
+        ${canEdit() ? `<div class="actions"><button type="button" class="btn" data-act="wagain" data-key="${esc(key)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Bought it again</button></div>` : ''}
+        ${ratingsBlock(key, 'spirit')}
+      </div>`;
+    }
+    return `<article class="item wh${open ? ' open' : ''}" id="wf-${esc(key)}" style="--rg:${rgVar(g)}">
+      <button type="button" class="item-head" data-act="wftoggle" data-key="${esc(key)}" aria-expanded="${open}">
+        <span class="count" title="Finished ${fins.length} ${fins.length === 1 ? 'bottle' : 'bottles'}"><b>${fins.length}</b>×</span>
+        <span class="mdot" title="${esc(RG[g])}"></span>
+        <span class="it-main"><span class="it-prod">${hl(sp.producer || sp.name || 'Unnamed bottle')}</span>${sp.producer && sp.name ? `<span class="it-name">${hl(sp.name)}</span>` : ''}<span class="it-meta">${esc(meta)}</span></span>
+        <span class="it-side">${here ? `<span class="pill on">${here} on the shelf</span>` : ''}${miniStars(key, 'spirit')}</span>
+      </button>${body}
+    </article>`;
+  }
+  function whiskeyList(){
+    if(!S.sbottles.size){
+      return `<div class="emptystate"><h2>No whiskey yet</h2>
+        <p>Send Claude a photo of the label and it will look the bottle up, find the distillery and pin it on the map${canEdit() ? `, or <button type="button" class="linkbtn" data-act="wadd">add one yourself</button>` : ''}.</p>
+        <p>Scotch, bourbon, rye, Irish, Japanese: each bottle gets a card like the wines do, plus its distillery on the map and a gauge for how much is left.</p></div>`;
+    }
+    const items = wItems();
+    if(!items.length){
+      return S.wv === 'shelf'
+        ? `<div class="emptystate"><h2>The shelf is empty</h2><p>Everything we had is on the Finished list. ${canEdit() ? `<button type="button" class="linkbtn" data-act="wadd">Add a bottle</button>` : ''}</p></div>`
+        : `<div class="emptystate"><h2>Nothing finished yet</h2><p>When a bottle runs dry, tap “Finished it” on its card. It moves here, with a count of how many bottles of it we’ve had.</p></div>`;
+    }
+    const shown = items.filter(x => matchesSpirit(x.sp, x.b));
+    if(!shown.length) return noMatch();
+    const rgOrder = Object.keys(RG);
+    const prod = x => fold(x.sp.producer || x.sp.name || '');
+    if(S.wv === 'shelf'){
+      const groups = new Map();
+      shown.sort((a, b) => rgOrder.indexOf(regionGroup(a.sp)) - rgOrder.indexOf(regionGroup(b.sp)) || prod(a).localeCompare(prod(b)));
+      Object.keys(KINDS).forEach(k => { const g = shown.filter(x => kindOf(x.sp) === k); if(g.length) groups.set(k, g); });
+      let html = '';
+      groups.forEach((g, k) => { html += `<section class="group"><h3 class="group-h">${esc(kindLabel(k))} · ${g.length}</h3><div class="items">${g.map(x => whiskeyItem(x.id, x.b)).join('')}</div></section>`; });
+      return html;
+    }
+    const lastOf = x => String(x.fins[0] ? x.fins[0][1].finishedOn || '' : '');
+    if(S.fsort === 'count') shown.sort((a, b) => b.fins.length - a.fins.length || lastOf(b).localeCompare(lastOf(a)));
+    else if(S.fsort === 'producer') shown.sort((a, b) => prod(a).localeCompare(prod(b)));
+    else if(S.fsort === 'rating') shown.sort((a, b) => { const x = avgFor(a.key, 'spirit'), y = avgFor(b.key, 'spirit'); if(x == null && y == null) return lastOf(b).localeCompare(lastOf(a)); if(x == null) return 1; if(y == null) return -1; return y - x; });
+    else shown.sort((a, b) => lastOf(b).localeCompare(lastOf(a)));
+    return `<div class="items" style="margin-top:18px">${shown.map(x => wFinishedItem(x.key, x.fins)).join('')}</div>`;
+  }
+
   /* ================= saving ================= */
   let toastTimer = null;
   function toast(msg, opts){
@@ -949,12 +1516,14 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     const d = S.doc;
     S.wines = new Map(Object.entries(d.wines || {}));
     S.bottles = new Map(Object.entries(d.bottles || {}));
+    S.spirits = new Map(Object.entries(d.spirits || {}));
+    S.sbottles = new Map(Object.entries(d.spiritBottles || {}));
     if(S.sel && (!S.bottles.has(S.sel) || S.bottles.get(S.sel).status === 'finished')) S.sel = null;
     if(S.placing && !S.bottles.has(S.placing)) S.placing = null;
+    if(S.wsel && (!S.sbottles.has(S.wsel) || S.sbottles.get(S.wsel).status === 'finished')) S.wsel = null;
   }
   function rebuildLocal(){
-    S.doc = clone(S.server ? S.server.doc : EMPTY);
-    ['wines','bottles','tastings'].forEach(k => { if(!S.doc[k] || typeof S.doc[k] !== 'object') S.doc[k] = {}; });
+    S.doc = ensureKeys(clone(S.server ? S.server.doc : EMPTY));
     S.pending.forEach(p => { try{ p.mutate(S.doc); }catch(e){} });
     syncFromDoc();
   }
@@ -980,8 +1549,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
       for(let attempt = 0; attempt < 4 && !ok; attempt++){
         try{
           if(attempt > 0 || !S.server) S.server = (await ghGetJSON(DATA_PATH)) || {doc:clone(EMPTY), sha:null};
-          const next = clone(S.server.doc);
-          ['wines','bottles','tastings'].forEach(k => { if(!next[k] || typeof next[k] !== 'object') next[k] = {}; });
+          const next = ensureKeys(clone(S.server.doc));
           item.mutate(next);
           const sha = await ghPut(DATA_PATH, strToB64(JSON.stringify(next, null, 1)), S.server.sha, item.message);
           S.server = {doc:next, sha};
@@ -1012,21 +1580,23 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     }catch(e){ if(!quiet) toast(errText(e), {err:true}); }
   }
 
-  function saveMine(key, patch, what){
+  function saveMine(key, patch, what, sc){
     if(!S.me) return;
     const stamp = new Date().toISOString();
-    const w = S.wines.get(key) || {};
-    commit(`${what} ${wineTitle(w)}`, doc => {
-      doc.tastings = doc.tastings || {};
-      const m = doc.tastings[S.me] = doc.tastings[S.me] || {};
+    const field = sc === 'spirit' ? 'spiritTastings' : 'tastings';
+    const title = sc === 'spirit' ? spiritTitle(S.spirits.get(key) || {}) : wineTitle(S.wines.get(key) || {});
+    commit(`${what} ${title}`, doc => {
+      doc[field] = doc[field] || {};
+      const m = doc[field][S.me] = doc[field][S.me] || {};
       m[key] = Object.assign({}, m[key] || {}, patch, {updatedAt:stamp});
     }).then(ok => { if(ok) toast('Saved'); });
   }
-  function commitNote(key){
-    if(!S.drafts.has(key)) return;
-    const v = S.drafts.get(key).trim(); S.drafts.delete(key);
-    if(v === (mine(key).note || '')){ scheduleRender(); return; }
-    saveMine(key, {note:v}, 'note on');
+  function commitNote(key, sc){
+    const dk = draftKey(key, sc);
+    if(!S.drafts.has(dk)) return;
+    const v = S.drafts.get(dk).trim(); S.drafts.delete(dk);
+    if(v === (mine(key, sc).note || '')){ scheduleRender(); return; }
+    saveMine(key, {note:v}, 'note on', sc);
   }
   function patchBottle(id, patch, message){
     return commit(message, doc => { if(doc.bottles[id]) Object.assign(doc.bottles[id], patch); });
@@ -1072,6 +1642,237 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
       if(!used) delete doc.wines[key];
     });
     toast('Removed');
+  }
+
+  /* ================= whiskey: saving ================= */
+  function patchSpiritBottle(id, patch, message){
+    return commit(message, doc => { if(doc.spiritBottles[id]) Object.assign(doc.spiritBottles[id], patch); });
+  }
+  function finishSpirit(id){
+    const b = S.sbottles.get(id); if(!b) return;
+    const sp = spiritOf(b), title = spiritTitle(sp);
+    const before = {status:b.status || 'in', finishedOn:b.finishedOn || ''};
+    S.wsel = null;
+    patchSpiritBottle(id, {status:'finished', finishedOn:today()}, `finished ${title}`);
+    const n = (finishedBySpirit().get(b.spirit) || []).length;
+    toast(`${sp.producer || sp.name || 'Bottle'} moved to Finished${n > 1 ? ` (${n}×)` : ''}`, {undo:() => patchSpiritBottle(id, before, `undo finish ${title}`)});
+  }
+  function setLevel(id, v){
+    const b = S.sbottles.get(id); if(!b) return;
+    const title = spiritTitle(spiritOf(b));
+    if(v === 'sealed'){ if(b.opened) patchSpiritBottle(id, {opened:false, openedOn:'', level:100}, `marked ${title} sealed`); return; }
+    const n = +v;
+    if(b.opened && levelOf(b) === n) return;
+    const lab = (LEVELS.find(x => x[0] === n) || [0, n + '%'])[1];
+    patchSpiritBottle(id, {opened:true, openedOn:b.openedOn || today(), level:n}, b.opened ? `${title} is at ${lab}` : `opened ${title}`);
+  }
+  function putBackSpirit(id){
+    const b = S.sbottles.get(id); if(!b) return;
+    patchSpiritBottle(id, {status:'in', finishedOn:''}, `put back ${spiritTitle(spiritOf(b))}`);
+    toast('Back on the shelf');
+  }
+  function removeSpiritBottle(id){
+    const b = S.sbottles.get(id); if(!b) return;
+    S.wsel = null; S.confirmRemove = null;
+    const key = b.spirit;
+    commit(`remove ${spiritTitle(spiritOf(b))}`, doc => {
+      delete doc.spiritBottles[id];
+      if(!Object.values(doc.spiritBottles).some(x => x.spirit === key)) delete doc.spirits[key];
+    });
+    toast('Removed');
+  }
+
+  /* ================= whiskey: add / edit sheet ================= */
+  const WF = {mode:'add', bottleId:null, key:null, photoBlob:null, photoUrl:null, labelPath:'', lat:null, lon:null, level:'sealed', found:null, prevKind:'scotch'};
+  const WTEXT = {wProducer:'producer', wName:'name', wStyle:'style', wAge:'age', wAbv:'abv', wRegion:'region', wCountry:'country', wCask:'cask', wGrain:'grain', wServe:'serve', wDist:'distillery', wPlace:'place'};
+  function wSetPhoto(blob){
+    if(WF.photoUrl){ try{ URL.revokeObjectURL(WF.photoUrl); }catch(e){} }
+    WF.photoBlob = blob; WF.photoUrl = blob ? URL.createObjectURL(blob) : null;
+    const prev = fld('wPhotoPrev');
+    if(WF.photoUrl) prev.innerHTML = `<img src="${WF.photoUrl}" alt="Label photo">`;
+    else if(WF.labelPath){ prev.innerHTML = `<img data-img="${esc(WF.labelPath)}" alt="Label photo">`; hydrateImages(prev); }
+    else prev.textContent = 'No photo';
+  }
+  function wFill(sp){
+    fld('wKind').value = KINDS[sp.kind] ? sp.kind : 'scotch';
+    Object.entries(WTEXT).forEach(([id, k]) => { fld(id).value = sp[k] == null ? '' : sp[k]; });
+    fld('wNose').value = arr(sp.nose).join(', '); fld('wPalate').value = arr(sp.palate).join(', '); fld('wFinish').value = arr(sp.finish).join(', ');
+    fld('wFacts').value = arr(sp.facts).join('\n');
+    const ll = llOf(sp); WF.lat = ll ? ll[0] : null; WF.lon = ll ? ll[1] : null;
+    WF.prevKind = fld('wKind').value;
+    fld('wGrainL').textContent = grainLabel(fld('wKind').value);
+  }
+  function wKindChanged(){
+    const k = fld('wKind').value, c = fld('wCountry');
+    if(!c.value.trim() || c.value.trim() === KIND_COUNTRY[WF.prevKind]) c.value = KIND_COUNTRY[k] || '';
+    WF.prevKind = k;
+    fld('wGrainL').textContent = grainLabel(k);
+  }
+  function renderWLevel(){
+    const opts = [['sealed', 'Sealed']].concat(LEVELS.map(([v, l]) => [String(v), l]));
+    fld('wLevel').innerHTML = opts.map(([v, l]) => `<button type="button" data-wl="${v}" aria-pressed="${WF.level === v}">${l}</button>`).join('');
+  }
+  function wLLText(){
+    const has = WF.lat != null;
+    fld('wLL').textContent = has ? `Pinned at ${WF.lat.toFixed(4)}, ${WF.lon.toFixed(4)}. Drag the pin to adjust it.` : 'No pin yet. Find the distillery, or tap the map to drop one.';
+    fld('wClearPin').hidden = !has;
+  }
+  function wPlaceMarker(){
+    const P = MAP.pick; if(!P) return;
+    if(WF.lat == null){ if(P.marker){ P.marker.remove(); P.marker = null; } return; }
+    if(!P.marker){
+      P.marker = L.marker([WF.lat, WF.lon], {draggable:true, keyboard:false, icon:L.divIcon({className:'', html:'<div class="pickpin"></div>', iconSize:[18, 18], iconAnchor:[9, 9]})}).addTo(P.m);
+      P.marker.on('dragend', () => { const p = P.marker.getLatLng(); WF.lat = round5(p.lat); WF.lon = round5(wrapLon(p.lng)); wLLText(); });
+    } else P.marker.setLatLng([WF.lat, WF.lon]);
+  }
+  function wSetPin(lat, lon){ WF.lat = round5(lat); WF.lon = round5(wrapLon(lon)); wPlaceMarker(); wLLText(); }
+  function wPickMap(){
+    const host = fld('wPickMap');
+    wLLText();
+    if(!window.L){
+      host.innerHTML = `<div class="wmap-msg"><span>${MAP.failed ? 'The map couldn’t load. You can still save the bottle and add the pin later.' : 'Loading the map…'}</span></div>`;
+      const again = () => { if(!fld('wsheet').hidden && window.L) wPickMap(); };
+      if(!MAP.failed) loadLeaflet().then(again, () => { if(!fld('wsheet').hidden) wPickMap(); });
+      return;
+    }
+    if(!MAP.pick){
+      host.innerHTML = '';
+      const el = document.createElement('div'); host.appendChild(el);
+      const m = L.map(el, mapOpts({zoomControl:true}));
+      addTiles(m);
+      m.on('click', e => wSetPin(e.latlng.lat, e.latlng.lng));
+      MAP.pick = {m, marker:null};
+    }
+    const P = MAP.pick;
+    P.m.invalidateSize();
+    if(P.marker){ P.marker.remove(); P.marker = null; }
+    wPlaceMarker();
+    if(WF.lat != null) P.m.setView([WF.lat, WF.lon], 10); else P.m.setView([56.9, -4.4], 5);
+  }
+  async function wFind(){
+    const res = fld('wFindRes');
+    const q = fld('wDist').value.trim() || (fld('wProducer').value.trim() ? fld('wProducer').value.trim() + ' distillery' : '');
+    if(!q){ res.innerHTML = '<p class="status err">Type the distillery’s name first.</p>'; fld('wDist').focus(); return; }
+    res.innerHTML = '<p class="status busy">Searching OpenStreetMap…</p>';
+    try{
+      const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&q=' + encodeURIComponent(q), {headers:{'Accept-Language':'en'}});
+      if(!r.ok) throw new Error(String(r.status));
+      const j = await r.json();
+      WF.found = Array.isArray(j) ? j.slice(0, 5) : [];
+      if(!WF.found.length){ res.innerHTML = `<p class="status">Nothing found for “${esc(q)}”. Try adding the town, or tap the map to drop the pin yourself.</p>`; return; }
+      res.innerHTML = WF.found.map((p, i) => `<button type="button" data-found="${i}">${esc(p.name || String(p.display_name || '').split(',')[0])}<small>${esc(p.display_name || '')}</small></button>`).join('') + '<p class="tiny">Places from OpenStreetMap (Nominatim)</p>';
+    }catch(e){ res.innerHTML = '<p class="status err">The search didn’t work just now. You can tap the map to drop the pin instead.</p>'; }
+  }
+  function wUseFound(i){
+    const p = WF.found && WF.found[i]; if(!p) return;
+    const lat = parseFloat(p.lat), lon = parseFloat(p.lon);
+    if(!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    wSetPin(lat, lon);
+    const a = p.address || {};
+    const town = a.village || a.town || a.city || a.hamlet || a.suburb || a.municipality || '';
+    const area = a.county || a.state_district || a.state || '';
+    if(!fld('wPlace').value.trim()) fld('wPlace').value = [...new Set([town, area].filter(Boolean))].join(', ');
+    if(!fld('wCountry').value.trim() && a.country) fld('wCountry').value = a.country;
+    if(!fld('wDist').value.trim() && p.name) fld('wDist').value = p.name;
+    fld('wFindRes').innerHTML = '';
+    if(MAP.pick) MAP.pick.m.setView([WF.lat, WF.lon], 11);
+  }
+  function wShowMatch(key){
+    const sp = S.spirits.get(key); if(!sp) return;
+    const n = (finishedBySpirit().get(key) || []).length, here = shelfCount(key);
+    const note = fld('wMatch');
+    note.textContent = `${n ? `You’ve finished ${n} ${n === 1 ? 'bottle' : 'bottles'} of this before. ` : here ? 'This one is already on the shelf. ' : ''}Its notes and distillery are filled in below.`;
+    note.hidden = false;
+  }
+  function wCheckMatch(){
+    if(WF.mode !== 'add' || WF.key) return;
+    const key = slug(fld('wProducer').value + ' ' + fld('wName').value);
+    const sp = key && S.spirits.get(key);
+    if(!sp){ fld('wMatch').hidden = true; return; }
+    const cur = wRead();
+    const merged = Object.assign({}, sp);
+    ['style', 'age', 'abv', 'region', 'country', 'cask', 'grain', 'serve', 'distillery', 'place'].forEach(k => { if(cur[k]) merged[k] = cur[k]; });
+    merged.kind = sp.kind || cur.kind;
+    wFill(merged);
+    if(!WF.labelPath){ WF.labelPath = sp.labelPath || ''; if(!WF.photoBlob) wSetPhoto(null); }
+    wShowMatch(key);
+    if(MAP.pick){ wPlaceMarker(); if(WF.lat != null) MAP.pick.m.setView([WF.lat, WF.lon], 10); }
+    wLLText();
+  }
+  function wRead(){
+    const v = {kind:fld('wKind').value};
+    Object.entries(WTEXT).forEach(([id, k]) => { v[k] = fld(id).value.trim(); });
+    if(/^\d+(\.\d+)?$/.test(v.abv)) v.abv += '%';
+    v.nose = list(fld('wNose').value); v.palate = list(fld('wPalate').value); v.finish = list(fld('wFinish').value);
+    v.facts = lines(fld('wFacts').value);
+    v.purchasedOn = fld('wBoughtOn').value || ''; v.purchasedFrom = fld('wBoughtFrom').value.trim();
+    return v;
+  }
+  function openWSheet(mode, opts){
+    if(!canEdit()) return;
+    opts = opts || {};
+    WF.mode = mode; WF.bottleId = opts.bottleId || null; WF.key = opts.key || null; WF.labelPath = ''; WF.found = null;
+    const b = WF.bottleId ? S.sbottles.get(WF.bottleId) : null;
+    const sp = WF.key ? (S.spirits.get(WF.key) || {}) : {kind:'scotch', country:'Scotland'};
+    if(WF.key) WF.labelPath = sp.labelPath || '';
+    wFill(sp);
+    fld('wBoughtOn').value = mode === 'edit' && b ? (b.purchasedOn || '') : '';
+    fld('wBoughtFrom').value = mode === 'edit' && b ? (b.purchasedFrom || '') : '';
+    WF.level = 'sealed'; renderWLevel();
+    fld('wLevelWrap').hidden = mode === 'edit';
+    wSetPhoto(null);
+    const ps = fld('wPhotoStatus'); ps.className = 'status'; ps.textContent = 'Optional. Or send Claude a photo and it will look the bottle up, find the distillery and pin it.';
+    fld('wErr').textContent = ''; fld('wMatch').hidden = true; fld('wFindRes').innerHTML = '';
+    if(mode === 'add' && WF.key) wShowMatch(WF.key);
+    fld('wTitle').textContent = mode === 'edit' ? 'Edit whiskey' : WF.key ? 'Add another bottle' : 'Add a whiskey';
+    fld('wSave').textContent = mode === 'edit' ? 'Save changes' : 'Add to the shelf';
+    fld('wEditNote').hidden = mode !== 'edit';
+    fld('wsheet').hidden = false;
+    fld('wsheet').querySelector('.sheet-body').scrollTop = 0;
+    wPickMap();
+    setTimeout(() => { fld('wProducer').focus(); }, 30);
+  }
+  function closeWSheet(){ fld('wsheet').hidden = true; wSetPhoto(null); }
+  async function saveWForm(e){
+    e.preventDefault();
+    const v = wRead();
+    if(!v.producer && !v.name){ fld('wErr').textContent = 'Add a distillery or brand, or an expression.'; fld('wProducer').focus(); return; }
+    const btn = fld('wSave'); btn.disabled = true; const label = btn.textContent; btn.textContent = 'Saving…';
+    try{
+      const key = WF.mode === 'edit' ? (S.sbottles.get(WF.bottleId) || {}).spirit : (WF.key || wineKeyFor(v.producer, v.name));
+      let labelPath = WF.labelPath || ((S.spirits.get(key) || {}).labelPath) || '';
+      if(WF.photoBlob){
+        const path = 'labels/' + key.slice(0, 60) + '-' + Date.now().toString(36) + '.jpg';
+        try{
+          const bytes = new Uint8Array(await WF.photoBlob.arrayBuffer());
+          await ghPut(path, bytesToB64(bytes), null, `${myName()}: label photo for ${spiritTitle(v)}`);
+          labelPath = path;
+          imgCache.set(path, Promise.resolve(URL.createObjectURL(WF.photoBlob)));
+        }catch(err){ toast('The photo didn’t upload. The bottle is saved without it.', {err:true}); }
+      }
+      const now = new Date().toISOString();
+      const fields = {kind:v.kind, producer:v.producer, name:v.name, style:v.style, age:v.age, abv:v.abv, region:v.region, country:v.country,
+        distillery:v.distillery, place:v.place, lat:WF.lat, lon:WF.lon, cask:v.cask, grain:v.grain,
+        nose:v.nose, palate:v.palate, finish:v.finish, serve:v.serve, facts:v.facts, labelPath, updatedAt:now};
+      const apply = doc => { doc.spirits[key] = Object.assign({}, doc.spirits[key] || {createdAt:now, source:'manual'}, fields); };
+      if(WF.mode === 'edit'){
+        const id = WF.bottleId;
+        commit(`edit ${spiritTitle(v)}`, doc => { apply(doc); if(doc.spiritBottles[id]) Object.assign(doc.spiritBottles[id], {purchasedOn:v.purchasedOn, purchasedFrom:v.purchasedFrom}); })
+          .then(ok => { if(ok) toast('Saved'); });
+        closeWSheet(); S.wsel = id; scheduleRender();
+      } else {
+        const id = 's-' + today() + '-' + key.slice(0, 40) + '-' + Math.random().toString(36).slice(2, 6);
+        const opened = WF.level !== 'sealed';
+        commit(`add ${spiritTitle(v)} to the whiskey shelf`, doc => {
+          apply(doc);
+          doc.spiritBottles[id] = {spirit:key, status:'in', opened, openedOn:opened ? today() : '', level:opened ? +WF.level : 100, addedOn:today(), finishedOn:'', purchasedOn:v.purchasedOn, purchasedFrom:v.purchasedFrom};
+        }).then(ok => { if(ok) toast('Added to the shelf'); });
+        closeWSheet();
+        S.view = 'whiskey'; S.wv = 'shelf'; setHash(); S.wsel = id; S.q = ''; S.wkind = 'all'; S.wregion = 'all'; fld('q').value = '';
+        scheduleRender();
+        setTimeout(() => { const el = document.getElementById('wb-' + id); if(el) el.scrollIntoView({behavior:reduced ? 'auto' : 'smooth', block:'nearest'}); }, 60);
+      }
+    } finally { btn.disabled = false; btn.textContent = label; }
   }
 
   /* ================= add / edit sheet ================= */
@@ -1261,17 +2062,20 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
 
   /* ================= events ================= */
   function setHash(){ try{ const h = '#' + S.view; if(location.hash !== h) history.replaceState(null, '', h); }catch(e){} }
-  function readHash(){ const h = (location.hash || '').slice(1); if(h === 'finished' || h === 'fridge') S.view = h; }
+  function readHash(){ const h = (location.hash || '').slice(1); if(h === 'finished' || h === 'fridge' || h === 'whiskey') S.view = h; }
   window.addEventListener('hashchange', () => { readHash(); S.type = 'all'; renderAll(); });
 
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
     if(S.view === t.dataset.view) return;
-    S.view = t.dataset.view; S.type = 'all'; S.placing = null; setHash(); renderAll();
+    S.view = t.dataset.view; S.type = 'all'; S.placing = null; S.confirmRemove = null; setHash(); renderAll();
   }));
-  $('#addBtn').addEventListener('click', () => openSheet('add'));
-  $('#refreshBtn').addEventListener('click', () => { if(S.phase === 'ready') refresh(false); else start(); });
+  $('#addBtn').addEventListener('click', () => { if(S.view === 'whiskey') openWSheet('add'); else openSheet('add'); });
+  $('#refreshBtn').addEventListener('click', () => { if(S.phase === 'ready'){ if(MAP.failed) loadLeaflet().then(scheduleRender, () => {}); refresh(false); } else start(); });
   $('#settingsBtn').addEventListener('click', openSettings);
-  $('#q').addEventListener('input', e => { S.q = e.target.value; renderFridge(); renderList(); hydrateImages(); });
+  $('#q').addEventListener('input', e => { S.q = e.target.value; renderAll(); });
+  $('#wSub').addEventListener('click', e => { const b = e.target.closest('[data-wsub]'); if(!b || S.wv === b.dataset.wsub) return; S.wv = b.dataset.wsub; S.confirmRemove = null; renderAll(); });
+  $('#wKinds').addEventListener('click', e => { const b = e.target.closest('[data-wkind]'); if(!b) return; S.wkind = b.dataset.wkind; renderAll(); });
+  $('#wLegend').addEventListener('click', e => { const b = e.target.closest('[data-wrg]'); if(!b) return; const g = b.dataset.wrg; S.wregion = g === 'all' || S.wregion === g ? 'all' : g; renderAll(); });
   $('#typeChips').addEventListener('click', e => { const b = e.target.closest('[data-type]'); if(!b) return; S.type = b.dataset.type; renderAll(); });
   $('#country').addEventListener('change', e => { S.country = e.target.value; renderAll(); });
   $('#fsort').addEventListener('change', e => { S.fsort = e.target.value; persist(); renderList(); hydrateImages(); });
@@ -1302,8 +2106,8 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     const pb = e.target.closest('[data-person]');
     if(pb && pb.closest('.connect')){ listEl.querySelectorAll('[data-person]').forEach(x => x.setAttribute('aria-pressed', String(x === pb))); return; }
     const b = e.target.closest('[data-act]'); if(!b) return;
-    const act = b.dataset.act, id = b.dataset.id, key = b.dataset.key;
-    if(act !== 'remove') S.confirmRemove = null;
+    const act = b.dataset.act, id = b.dataset.id, key = b.dataset.key, sc = b.dataset.sc;
+    if(act !== 'remove' && act !== 'wremove') S.confirmRemove = null;
     if(act === 'toggle'){ S.sel = S.sel === id ? null : id; S.ping = S.sel === id; S.placing = null; renderAll(); }
     else if(act === 'ftoggle'){ S.fsel = S.fsel === key ? null : key; renderAll(); }
     else if(act === 'finish') finishBottle(id);
@@ -1320,11 +2124,26 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
       else { S.confirmRemove = id; renderList(); setTimeout(() => { if(S.confirmRemove === id){ S.confirmRemove = null; renderList(); } }, 4000); }
     }
     else if(act === 'putback') putBack(id);
-    else if(act === 'star'){ const n = +b.dataset.v; const cur = mine(key).stars | 0; saveMine(key, {stars:n === cur ? 0 : n}, n === cur ? 'cleared rating for' : `rated ${n}★`); }
-    else if(act === 'savenote') commitNote(key);
+    else if(act === 'star'){ const n = +b.dataset.v; const cur = mine(key, sc).stars | 0; saveMine(key, {stars:n === cur ? 0 : n}, n === cur ? 'cleared rating for' : `rated ${n}★`, sc); }
+    else if(act === 'savenote') commitNote(key, sc);
     else if(act === 'photo') openLightbox(b.dataset.path);
     else if(act === 'add') openSheet('add');
-    else if(act === 'clear'){ S.q = ''; S.type = 'all'; S.country = 'all'; $('#q').value = ''; renderAll(); }
+    else if(act === 'clear'){ S.q = ''; S.type = 'all'; S.country = 'all'; S.wkind = 'all'; S.wregion = 'all'; $('#q').value = ''; renderAll(); }
+    // whiskey
+    else if(act === 'wtoggle'){ S.wsel = S.wsel === id ? null : id; renderAll(); }
+    else if(act === 'wftoggle'){ S.wfsel = S.wfsel === key ? null : key; renderAll(); }
+    else if(act === 'wfinish') finishSpirit(id);
+    else if(act === 'wlevel') setLevel(id, b.dataset.v);
+    else if(act === 'wanother'){ const x = S.sbottles.get(id); if(x) openWSheet('add', {key:x.spirit}); }
+    else if(act === 'wagain') openWSheet('add', {key});
+    else if(act === 'wedit'){ const x = S.sbottles.get(id); if(x) openWSheet('edit', {bottleId:id, key:x.spirit}); }
+    else if(act === 'wremove'){
+      const ck = 'w:' + id;
+      if(S.confirmRemove === ck) removeSpiritBottle(id);
+      else { S.confirmRemove = ck; renderAll(); setTimeout(() => { if(S.confirmRemove === ck){ S.confirmRemove = null; renderAll(); } }, 4000); }
+    }
+    else if(act === 'wputback') putBackSpirit(id);
+    else if(act === 'wadd') openWSheet('add');
     else if(act === 'retry') start();
     else if(act === 'settings') openSettings();
     else if(act === 'connect') connectFromPanel();
@@ -1332,13 +2151,13 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
   listEl.addEventListener('input', e => {
     const t = e.target;
     if(t.dataset && t.dataset.act === 'note'){
-      S.drafts.set(t.dataset.key, t.value);
+      S.drafts.set(draftKey(t.dataset.key, t.dataset.sc), t.value);
       const btn = t.closest('.note-wrap').querySelector('[data-act="savenote"]');
-      if(btn) btn.hidden = t.value.trim() === (mine(t.dataset.key).note || '');
+      if(btn) btn.hidden = t.value.trim() === (mine(t.dataset.key, t.dataset.sc).note || '');
     }
   });
-  listEl.addEventListener('focusout', e => { const t = e.target; if(t.dataset && t.dataset.act === 'note') commitNote(t.dataset.key); });
-  listEl.addEventListener('keydown', e => { const t = e.target; if(t.dataset && t.dataset.act === 'note' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); commitNote(t.dataset.key); } });
+  listEl.addEventListener('focusout', e => { const t = e.target; if(t.dataset && t.dataset.act === 'note') commitNote(t.dataset.key, t.dataset.sc); });
+  listEl.addEventListener('keydown', e => { const t = e.target; if(t.dataset && t.dataset.act === 'note' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); commitNote(t.dataset.key, t.dataset.sc); } });
 
   async function connectFromPanel(){
     const st = $('#cStatus');
@@ -1396,6 +2215,30 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     }
   });
 
+  fld('wform').addEventListener('submit', saveWForm);
+  fld('wsheet').addEventListener('click', e => {
+    if(e.target.id === 'wsheet' || e.target.closest('[data-wclose]')){ closeWSheet(); return; }
+    const f = e.target.closest('[data-found]'); if(f){ wUseFound(+f.dataset.found); return; }
+    const l = e.target.closest('[data-wl]'); if(l){ WF.level = l.dataset.wl; renderWLevel(); }
+  });
+  fld('wKind').addEventListener('change', wKindChanged);
+  fld('wProducer').addEventListener('blur', wCheckMatch);
+  fld('wName').addEventListener('blur', wCheckMatch);
+  fld('wFind').addEventListener('click', wFind);
+  fld('wDist').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); wFind(); } });
+  fld('wClearPin').addEventListener('click', () => { WF.lat = null; WF.lon = null; wPlaceMarker(); wLLText(); });
+  fld('wPhoto').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0]; e.target.value = '';
+    if(!file) return;
+    const st = fld('wPhotoStatus'); st.className = 'status busy'; st.textContent = 'Preparing the photo…';
+    try{
+      const blob = await prepPhoto(file);
+      if(!blob) throw new Error('no blob');
+      wSetPhoto(blob);
+      st.className = 'status'; st.textContent = 'Photo ready. It uploads when you save.';
+    }catch(err){ st.className = 'status err'; st.textContent = 'That photo format couldn’t be opened here. Try a screenshot or a JPEG.'; }
+  });
+
   function openLightbox(path){ $('#lbImg').removeAttribute('src'); $('#lightbox').hidden = false; $('#lbClose').focus(); loadImg(path).then(u => { $('#lbImg').src = u; }).catch(() => {}); }
   function closeLightbox(){ $('#lightbox').hidden = true; }
   $('#lightbox').addEventListener('click', e => { if(e.target.id !== 'lbImg') closeLightbox(); });
@@ -1403,6 +2246,7 @@ mark{background:transparent;color:inherit;text-decoration:underline;text-decorat
     if(e.key !== 'Escape') return;
     if(!$('#lightbox').hidden) closeLightbox();
     else if(!$('#settings').hidden) $('#settings').hidden = true;
+    else if(!fld('wsheet').hidden) closeWSheet();
     else if(!fld('sheet').hidden) closeSheet();
     else if(S.placing){ S.placing = null; renderAll(); }
   });
